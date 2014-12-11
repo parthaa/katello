@@ -117,10 +117,17 @@ module Katello
       ::DockerImage.send :include, Glue::Pulp::PulpContentUnit # need to include this before DockerImageExtensions
       ::DockerImage.send :include, Katello::Concerns::DockerImageExtensions
       ::DockerTag.send :include, Katello::Concerns::DockerTagExtensions
+      ::Container.send :include, Katello::Concerns::ContainerExtensions
 
       #Controller extensions
       ::OperatingsystemsController.send :include, Katello::Concerns::OperatingsystemsControllerExtensions
       ::HostsController.send :include, Katello::Concerns::HostsControllerExtensions
+      ::Containers::StepsController.send :include, Katello::Concerns::Containers::StepsControllerExtensions
+
+      #Helper Extensions
+      ::Containers::StepsController.class_eval do
+        helper Katello::Concerns::ForemanDocker::ContainerStepsHelperExtensions
+      end
 
       #Handle Smart Proxy items separately
       begin

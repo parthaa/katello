@@ -1,0 +1,24 @@
+<%= javascript "katello/containers/container.js" %>
+<div>
+  <div class="form-group">
+    <div>
+      <%= select_container_capsule(f) -%>
+    </div>
+
+    <div id="container_lifecycle_environments">
+      <%= select_container_life_cycle_environments(f) -%>
+    </div>
+    <div  id="container_content_views">
+      <%= select_container_content_views(f) -%>
+    </div>
+
+    <div id="container_content_view_repos">
+      <%= select_container_cv_repositories(f) -%>
+    </div>
+
+    <div id="container_content_view_repo_tags">
+      <%= select_container_cv_tags(f) -%>
+    </div>
+
+  </div>
+</div>

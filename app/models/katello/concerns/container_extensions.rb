@@ -12,30 +12,25 @@
 
 module Katello
   module Concerns
-    module DockerTagExtensions
+    module ContainerExtensions
       extend ActiveSupport::Concern
 
       included do
-        belongs_to :repository, :inverse_of => :docker_tags, :foreign_key => :katello_repository_id,
-          :class_name => "Katello::Repository"
-
-        scoped_search :on => [:id, :tag]
+        alias_method_chain :parametrize, :katello
       end
 
-      # docker tag only has one repo
-      def repositories
-        [repository]
-      end
-
-      module ClassMethods
-        def in_repositories(repos)
-          where(:katello_repository_id => repos)
+      def parametrize_with_katello()
+        val = parametrize_without_katello
+        image_name = val["Image"].rpartition(":")
+        if image_name.first.blank?
+          image_name = image_name.last
+        else
+          image_name = image_name.first
         end
-
-        # docker tag doesn't have a uuid in pulp
-        def with_uuid(uuid)
-          where(:id => uuid)
+        if Repository.where(:pulp_id => image_name).count > 0
+          val["Image"] = "#{URI(SmartProxy.first.url).hostname}:5000/#{val["Image"]}"
         end
+        val
       end
     end
   end
