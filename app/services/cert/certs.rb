@@ -15,5 +15,9 @@ module Cert
     def self.ssl_client_key
       @ssl_client_key ||= OpenSSL::PKey::RSA.new(File.open(Setting['pulp_client_key'], 'r').read)
     end
+
+    def self.ssl_host_private_key
+      @ssl_host_private_key ||= OpenSSL::PKey::RSA.new(File.open(Setting['ssl_priv_key'], 'r').read)
+    end
   end
 end

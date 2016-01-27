@@ -41,6 +41,10 @@ Gem::Specification.new do |gem|
   gem.add_dependency "jquery-ui-rails"
   gem.add_dependency "bastion", ">= 3.2.0", "< 4.0.0"
 
+  # Docker
+  gem.add_dependency('jwt')
+  gem.add_dependency('base32')
+
   # Testing
   gem.add_development_dependency "factory_girl_rails"
   gem.add_development_dependency "minitest-tags"
@@ -48,6 +52,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "vcr", "< 3.0.0"
   gem.add_development_dependency "webmock"
   gem.add_development_dependency "rubocop-checkstyle_formatter"
+  gem.add_development_dependency('jwt')
+  gem.add_development_dependency('base32')
 
 end
 

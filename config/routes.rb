@@ -58,6 +58,8 @@ Katello::Engine.routes.draw do
       delete 'favorite/:id' => 'search#destroy_favorite', :on => :collection, :as => 'destroy_favorite'
     end
 
+    match '/docker_auth_token', :controller => :docker_auth, :action => "index", :via => :get
     match '/403' => 'application#permission_denied', :via => :get
+
   end
 end
