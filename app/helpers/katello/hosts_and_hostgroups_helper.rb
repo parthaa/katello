@@ -34,6 +34,12 @@ module Katello
       end
     end
 
+    def use_install_media(host, options = {})
+      selected_host_group = options.fetch(:selected_host_group, nil)
+      return selected_host_group.use_install_media? if selected_host_group.present?
+      host.try(:use_install_media?)
+    end
+
     def fetch_lifecycle_environment(host, options = {})
       selected_host_group = options.fetch(:selected_host_group, nil)
       selected_env = lifecycle_environment(host)

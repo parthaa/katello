@@ -1,0 +1,6 @@
+  <%= select_f f, :kickstart_repository_id, [], :id, :to_label,
+    {:include_blank => false},
+    {:label => _("Synced Content"), :disabled => false,
+     :help_inline => :indicator, :onchange => '', :"data-kickstart-repository-id" => true,
+     :'data-type' => controller_name, :required => true }
+  %>

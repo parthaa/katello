@@ -217,6 +217,7 @@ module Katello
       end
 
       ::SettingsHelper.send :include, Katello::Concerns::SettingsHelperExtensions
+      ::HostsAndHostgroupsHelper.send :include, Katello::Concerns::HostsAndHostgroupsHelperExtensions
 
       load 'katello/repository_types.rb'
     end

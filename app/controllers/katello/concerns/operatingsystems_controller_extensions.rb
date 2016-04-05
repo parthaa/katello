@@ -3,7 +3,7 @@ module Katello
     module OperatingsystemsControllerExtensions
       extend ActiveSupport::Concern
 
-      def available_kickstart_repo
+      def available_kickstart_repositories
         host = ::Host.new
         host.operatingsystem = Operatingsystem.find(params[:id])
         host.architecture = Architecture.find(params[:architecture_id])
@@ -15,15 +15,15 @@ module Katello
         host.content_source = SmartProxy.find(params[:content_source_id])
 
         if  host.operatingsystem.is_a?(Redhat)
-          render :json =>  host.operatingsystem.kickstart_repo(host)
+          render :json =>  host.operatingsystem.kickstart_repos(host)
         else
-          render :json => nil
+          render :json => []
         end
       end
 
       def action_permission
         case params[:action]
-        when 'available_kickstart_repo'
+        when 'available_kickstart_repositories'
           'view'
         else
           super
