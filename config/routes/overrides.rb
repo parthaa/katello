@@ -18,7 +18,7 @@ Foreman::Application.routes.draw do
   match "/api/v1/organizations/:id", via: :delete, to: proc { [404, {}, [override_message]] }
 
   resources :operatingsystems, :only => [] do
-    get 'available_kickstart_repo', :on => :member
+    get 'available_kickstart_repositories', :on => :member
   end
 
   resources :hosts, :only => [] do

@@ -25,21 +25,33 @@ class OperatingsystemsControllerTest < ActionController::TestCase
     models
   end
 
-  def test_available_kickstart_repo
-    response = get :available_kickstart_repo, :content_view_id => @library_view.id, :lifecycle_environment_id => @library.id,
+  def test_available_kickstart_repositories
+    response = get :available_kickstart_repositories, :content_view_id => @library_view.id, :lifecycle_environment_id => @library.id,
         :architecture_id => @x86_64.id, :id => @redhat.id, :content_source_id => @capsule.id
     body = JSON.parse(response.body)
 
     assert_response :success
-    assert body['path'].ends_with?(@repo_with_dist.relative_path)
-    assert_includes body['path'], @capsule.url
+    assert body[0]['path'].ends_with?(@repo_with_dist.relative_path)
+    assert_includes body[0]['path'], @capsule.url
   end
 
-  def test_nonavailable_kickstart_repo
-    response = get :available_kickstart_repo, :content_view_id => @library_view.id, :lifecycle_environment_id => @library.id,
+  def test_nonavailable_kickstart_repositories
+    response = get :available_kickstart_repositories, :content_view_id => @library_view.id, :lifecycle_environment_id => @library.id,
         :architecture_id => @sparc.id, :id => @redhat.id, :content_source_id => @capsule.id
 
     assert_response :success
-    assert_equal 'null', response.body
+    assert_equal '[]', response.body
+  end
+
+  def test_multiple_available_kickstart_repositories
+    @redhat.expects(:kickstart_repos).returns([{ :name => "foo"}, {:name => "bar"}])
+    Operatingsystem.expects(:find).returns(@redhat)
+
+    response = get :available_kickstart_repositories, :content_view_id => @library_view.id, :lifecycle_environment_id => @library.id,
+        :architecture_id => @x86_64.id, :id => @redhat.id, :content_source_id => @capsule.id
+
+    body = JSON.parse(response.body)
+    assert_response :success
+    assert_equal 2, body.size
   end
 end

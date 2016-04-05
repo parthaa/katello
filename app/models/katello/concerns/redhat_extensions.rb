@@ -44,16 +44,65 @@ module Katello
       end
 
       def medium_uri_with_content_uri(host, url = nil)
-        if host.try(:content_source) && (repo_details = kickstart_repo(host))
-          URI.parse(repo_details[:path])
+        if host.try(:content_source) && (repos = distribution_repositories(host)).present?
+          if repos.size == 1
+            # There is exactly 1 ks repo distribution matching the os, arch, release
+            # cv, env for this host. Just get the media path from available repo.
+            URI.parse(repos.first.full_path(host.content_source))
+          else
+            # There is more then one possible  kickstart repository distribution
+            # for this host. This means the user must have chosen an install media as
+            # the repo path for install media content.
+            # This will typically look like ->
+            # path: http://<sat-fqdn>/pulp/repos/Default_Organization/Library/content/dist/rhel/workstation/7/7.2/x86_64/kickstart/
+            # what we need though is the sat-fqdn up replaced by the content source/ capsule/smartproxy  url.
+            #
+            # So we first get the Install Media path
+            # i.e http://<sat-fqdn>/pulp/repos/Default_Organization/Library/content/dist/rhel/workstation/7/7.2/x86_64/kickstart/
+            media_uri = medium_uri_without_content_uri(host, url)
+
+            # get the path and make sure its suffixed with a / at the end so we can match consistently
+            # i.e /pulp/repos/Default_Organization/Library/content/dist/rhel/workstation/7/7.2/x86_64/kickstart/
+            media_uri_path = media_uri.path.end_with?('/') ? media_uri.path : media_uri.path + "/"
+
+            # find the kickstart repo that has a repo path that ends with $uri_path->
+            # /pulp/repos/Default_Organization/Library/content/dist/rhel/workstation/7/7.2/x86_64/kickstart/
+            distro_repo = repos.find do |repo|
+              # generate the possible url repo url. We just need the path of that url so that we can compare
+              # to the about media_uri_path
+              repo_uri = URI.parse(repo.full_path(host.content_source))
+              # get the path and add a trailing slash at the end so that we can match it to the media_uri_path properly
+              repo_uri_path = repo_uri.path.end_with?('/') ? repo_uri.path : repo_uri.path + "/"
+              # compare the two.
+              repo_uri_path == media_uri_path
+            end
+
+            # if a there is a matching repo distribution use that and generate a new media url with content source in it.
+            # So outcome will be a media url that looks like
+            #  http://<content source-fqdn>/pulp/repos/Default_Organization/Library/content/dist/rhel/workstation/7/7.2/x86_64/kickstart/
+            if distro_repo
+              URI.parse(distro_repo.full_path(host.content_source))
+            else
+              # no repo path was found for this matched, its quite possible the user chose a media that is not associated to
+              # any of our kickstart repos, even though its associated to the same os and accidentally chose a content source
+              # so just return the install media uri
+              media_uri
+            end
+          end
         else
           medium_uri_without_content_uri(host, url)
         end
       end
 
-      def kickstart_repo(host)
-        distro = distribution_repositories(host).first
-        {:name => distro.name, :path => distro.full_path(host.content_source)} if distro && host.content_source
+      def kickstart_repos(host)
+        distros = distribution_repositories(host)
+        if distros && host.content_source
+          distros.map do |distro|
+            {:name => distro.name, :path => distro.full_path(host.content_source)}
+          end
+        else
+          []
+        end
       end
 
       def distribution_repositories(host)

@@ -37,7 +37,7 @@ KT.hosts.signalContentViewFetch = function(fetching) {
     var select = KT.hosts.getContentViewSelect();
     var select2 = KT.hosts.getContentViewSelect2();
         //parent = select.parent(),
-        spinner = $('<img>').attr('src', '/assets/spinner.gif'),
+        spinner = $('<img>').attr('src', select.data("spinner-path")),
         spinner_id = "content_view_spinner";
 
     if(fetching) {
@@ -61,8 +61,10 @@ KT.hosts.setDefaultPuppetEnvironment = function(view_id, env_id) {
     if (view_id && env_id) {
         $.get('/hosts/puppet_environment_for_content_view', {content_view_id: view_id, lifecycle_environment_id: env_id}, function (data) {
             var select = KT.hosts.getPuppetEnvironmentSelect();
-            select.val(data.id);
-            select.trigger('change');
+            if (data !== null) {
+                select.val(data.id);
+                select.trigger('change');
+            }
         })
     }
 };
@@ -148,7 +150,7 @@ KT.hosts.toggle_installation_medium = function() {
     if (content_view_id && lifecycle_environment_id && content_source_id && architecture_id && operatingsystem_id) {
         $.ajax({
             type:'get',
-            url: '/operatingsystems/' + operatingsystem_id + '/available_kickstart_repo',
+            url: '/operatingsystems/' + operatingsystem_id + '/available_kickstart_repositories',
             data: {
                 lifecycle_environment_id: lifecycle_environment_id,
                 content_source_id: content_source_id,
@@ -160,7 +162,7 @@ KT.hosts.toggle_installation_medium = function() {
                 KT.hosts.show_medium_selectbox();
             },
             success: function(result){
-                if (result == null) {
+                if (result.length !== 1) {
                     KT.hosts.show_medium_selectbox();
                 } else {
                     // add kickstart_url div after checking that it doesn't exist
@@ -175,7 +177,7 @@ KT.hosts.toggle_installation_medium = function() {
                     $("#hostgroup_medium_id").hide();
                     $("#s2id_hostgroup_medium_id").hide();
                     // populate kickstart_url inside div created above
-                    $("#kt_kickstart_url").html(result.name+"<br />"+result.path);
+                    $("#kt_kickstart_url").html(result[0].name+"<br />" + result[0].path);
                 }
             }
         })

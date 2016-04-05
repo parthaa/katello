@@ -56,4 +56,70 @@ module Katello
       refute_includes repo_list, other_repo
     end
   end
+
+  class RedhatExtensionsMediaTest < ActiveSupport::TestCase
+    def setup
+      User.current = User.find(users(:admin))
+      @repo_with_distro = katello_repositories(:fedora_17_x86_64)
+      version = @repo_with_distro.distribution_version.split('.')
+      @os = ::Redhat.create_operating_system("RedHat", version[0], version[1])
+      @content_source = SmartProxy.create!(:name => "foobar", :url => "http://capsule.com/")
+
+      @host = ::Host.new(:architecture => architectures(:x86_64), :operatingsystem => @os,
+                        :content_facet_attributes => {:lifecycle_environment_id => @repo_with_distro.environment.id,
+                                                      :content_view_id => @repo_with_distro.content_view.id})
+
+      @host.content_source = @content_source
+    end
+
+    def test_medium_uri_for_no_content_source
+      # create os
+      @os.media.create!(:name => "my-media", :path => "http://www.foo.com/abcd")
+      @host.medium = @os.media.first
+      @host.content_source = nil
+      assert_equal @os.media.first.path, @os.medium_uri(@host).to_s
+    end
+
+    def test_medium_uri_with_one_ks_repo
+      @os.expects(:distribution_repositories).with(@host).returns([@repo_with_distro])
+      assert_equal @repo_with_distro.full_path(@content_source), @os.medium_uri(@host).to_s
+    end
+
+    def test_medium_uri_with_multiple_ks_repos
+      other_repo = katello_repositories(:rhel_7_x86_64)
+      other_repo_uri = URI.parse(other_repo.full_path(@content_source))
+      @os.media.create!(:name => "my-media", :path => "http://www.foo.com" + other_repo_uri.path)
+      @host.medium = @os.media.first
+
+      @os.expects(:distribution_repositories).with(@host).returns([@repo_with_distro, other_repo])
+
+      assert_equal other_repo_uri, @os.medium_uri(@host)
+    end
+
+    def test_medium_uri_with_multiple_ks_repos_non_matching_media
+      # basically a multiplie ks repos match
+      # but the media path is not connected to any
+      # of the ks repos (look at the medium_uri method for more info)
+      other_repo = katello_repositories(:rhel_7_x86_64)
+      @os.media.create!(:name => "my-media", :path => "http://www.foo.com/abcd")
+      @host.medium = @os.media.first
+
+      @os.expects(:distribution_repositories).with(@host).returns([@repo_with_distro, other_repo])
+
+      assert_equal @os.media.first.path, @os.medium_uri(@host).to_s
+    end
+
+    def test_kickstart_repos_with_no_content_source
+      @os.expects(:distribution_repositories).with(@host).returns([@repo_with_distro])
+      @host.content_source = nil
+      assert_nil @os.kickstart_repos(@host)
+    end
+
+    def test_kickstart_repos_with_one_distro
+      @os.expects(:distribution_repositories).with(@host).returns([@repo_with_distro])
+      repos =  @os.kickstart_repos(@host)
+      refute_nil repos
+      assert_equal @repo_with_distro.full_path(@content_source), repos.first[:path]
+    end
+  end
 end
