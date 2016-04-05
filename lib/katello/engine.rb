@@ -161,7 +161,6 @@ module Katello
       ::DockerContainerWizardState.send :include, Katello::Concerns::DockerContainerWizardStateExtensions
 
       #Controller extensions
-      ::OperatingsystemsController.send :include, Katello::Concerns::OperatingsystemsControllerExtensions
       ::HostsController.send :include, Katello::Concerns::HostsControllerExtensions
       ::SmartProxiesController.send :include, Katello::Concerns::SmartProxiesControllerExtensions
       ::Containers::StepsController.send :include, Katello::Concerns::Containers::StepsControllerExtensions
