@@ -200,21 +200,21 @@ KT.hosts.hide_medium_selectbox = function() {
 
 // Overwriting host_edits os_selected method
 // https://github.com/theforeman/foreman/blob/develop/app/assets/javascripts/host_edit.js
-function os_selected(element){
-  var attrs = attribute_hash(['operatingsystem_id', 'organization_id', 'location_id', ]);
-  var url = $(element).attr('data-url');
-  foreman.tools.showSpinner();
-  $.ajax({
-    data: attrs,
-    type:'post',
-    url: url,
-    complete: function(){
-      reloadOnAjaxComplete(element);
-    },
-    success: function(request) {
-      $('#media_select').html(request);
-      reload_host_params();
-    }
-  });
-  update_provisioning_image();
-}
+// function os_selected(element){
+//   var attrs = attribute_hash(['operatingsystem_id', 'organization_id', 'location_id', ]);
+//   var url = $(element).attr('data-url');
+//   foreman.tools.showSpinner();
+//   $.ajax({
+//     data: attrs,
+//     type:'post',
+//     url: url,
+//     complete: function(){
+//       reloadOnAjaxComplete(element);
+//     },
+//     success: function(request) {
+//       $('#media_select').html(request);
+//       reload_host_params();
+//     }
+//   });
+//   update_provisioning_image();
+// }
