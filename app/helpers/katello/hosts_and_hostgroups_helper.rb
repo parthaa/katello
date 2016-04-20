@@ -117,6 +117,19 @@ module Katello
       view_options.html_safe
     end
 
+    def view_to_options(view_options, selected_val, include_blank = false)
+      if include_blank == true #check for true specifically
+        include_blank = '<option></option>'
+      end
+      views = view_options.map do |view|
+        selected = selected_val == view.id ? 'selected' : ''
+        %(<option #{selected} value="#{view.id}">#{h(view.name)}</option>)
+      end
+      views = views.join
+      views.insert(0, include_blank) if include_blank
+      views.html_safe
+    end
+
     def kickstart_repository_options(param_host, options = {})
       # this method gets called in 2 places
       # 1) On initial page load or a host group selection. At that point the host object is already
