@@ -9,7 +9,7 @@ module Actions
 
           copy_clauses = nil
           remove_clauses = nil
-          process_errata_and_groups = false
+          process_errata_groups_modules = false
           filters = filters.yum unless filters.is_a? Array
 
           if filters.any?
@@ -24,18 +24,20 @@ module Actions
 
             if filters.empty? || copy_clauses
               plan_copy(Pulp::Repository::CopyRpm, source_repo, target_repo, copy_clauses)
-              process_errata_and_groups = true
+              process_errata_groups_modules = true
             elsif options[:simple_clone]
               plan_copy(Pulp::Repository::CopyRpm, source_repo, target_repo)
-              process_errata_and_groups = true
+              process_errata_groups_modules = true
             end
             if remove_clauses
               plan_remove(Pulp::Repository::RemoveRpm, target_repo, :unit => remove_clauses)
-              process_errata_and_groups = true
+              process_errata_groups_modules = true
             end
-            if process_errata_and_groups
+            if process_errata_groups_modules
               plan_copy(Pulp::Repository::CopyErrata, source_repo, target_repo, nil)
               plan_copy(Pulp::Repository::CopyPackageGroup, source_repo, target_repo, nil)
+              plan_copy(Pulp::Repository::CopyModuleStream, source_repo, target_repo, nil)
+              plan_copy(Pulp::Repository::CopyModuleDefault, source_repo, target_repo)
             end
             plan_copy(Pulp::Repository::CopyYumMetadataFile, source_repo, target_repo)
             plan_copy(Pulp::Repository::CopyDistribution, source_repo, target_repo)
@@ -54,8 +56,12 @@ module Actions
             if purge_empty_units
               plan_action(Pulp::Repository::PurgeEmptyErrata, :pulp_id => target_repo.pulp_id)
               plan_action(Pulp::Repository::PurgeEmptyPackageGroups, :pulp_id => target_repo.pulp_id)
+              plan_action(Pulp::Repository::PurgeEmptyModuleDefaults, :pulp_id => target_repo.pulp_id)
+              plan_action(Pulp::Repository::PurgeEmptyModuleStreams, :pulp_id => target_repo.pulp_id)
+
               plan_action(Katello::Repository::IndexErrata, target_repo)
               plan_action(Katello::Repository::IndexPackageGroups, target_repo)
+              plan_action(Katello::Repository::IndexModuleStreams, target_repo)
             end
 
             source_repository = filters.empty? ? source_repo : nil

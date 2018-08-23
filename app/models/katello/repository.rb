@@ -288,6 +288,27 @@ module Katello
       !redhat?
     end
 
+    def empty_module_streams
+      repository_rpm = Katello::RepositoryRpm.table_name
+      repository_module_streams = Katello::RepositoryModuleStream.table_name
+      rpm = Katello::Rpm.table_name
+      module_stream = Katello::ModuleStream.table_name
+      module_stream_artifacts = Katello::ModuleStreamArtifact.table_name
+      module_stream_with_artifacts = ModuleStream.joins(
+        "INNER JOIN #{module_stream_artifacts} on #{module_stream_artifacts}.module_stream_id = #{module_stream}.id",
+        "INNER JOIN #{repository_module_streams} on #{repository_module_streams}.module_stream_id = #{module_stream}.id",
+        "INNER JOIN #{rpm} on #{rpm}.filename = #{module_stream_artifacts}.name",
+        "INNER JOIN #{repository_rpm} on #{repository_rpm}.rpm_id = #{rpm}.id").
+        where("#{repository_rpm}.repository_id" => self.id).
+        where("#{repository_module_streams}.repository_id" => self.id)
+
+      if module_stream_with_artifacts.any?
+        self.module_streams.where("#{Katello::ModuleStream.table_name}.id NOT IN (?)", module_stream_with_artifacts.pluck("#{module_stream}.id"))
+      else
+        self.module_streams
+      end
+    end
+
     def empty_errata
       repository_rpm = Katello::RepositoryRpm.table_name
       repository_errata = Katello::RepositoryErratum.table_name
