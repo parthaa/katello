@@ -10,6 +10,7 @@ module Katello
     has_many :content_facet_applicable_rpms, :class_name => "Katello::ContentFacetApplicableRpm",
              :dependent => :destroy, :inverse_of => :rpm
     has_many :content_facets, :through => :content_facet_applicable_rpms, :class_name => "Katello::Host::ContentFacet"
+    has_many :module_stream_artifacts, :class_name => "Katello::ModuleStreamArtifact", :dependent => :destroy, :inverse_of => :package
 
     scoped_search :on => :name, :complete_value => true
     scoped_search :on => :version, :complete_value => true, :ext_method => :scoped_search_version

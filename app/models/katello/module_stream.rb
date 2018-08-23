@@ -7,7 +7,9 @@ module Katello
     has_many :profiles, class_name: "Katello::ModuleProfile", dependent: :destroy
     has_many :artifacts, class_name: "Katello::ModuleStreamArtifact", dependent: :destroy
 
-    CONTENT_TYPE = 'modulemd'.freeze
+    CONTENT_TYPE = Pulp::ModuleStream::CONTENT_TYPE
+
+    MODULE_STREAM_DEFAULT_CONTENT_TYPE = "modulemd_defaults".freeze
 
     def self.default_sort
       order(:name)
@@ -28,7 +30,8 @@ module Katello
 
     def create_stream_artifacts(artifacts)
       artifacts.each do |name|
-        self.artifacts.where(name: name).first_or_create!
+        module_rpm = Katello::Rpm.where(::Katello::Util::Package.parse_nvrea_nvre(name)).first_or_create!
+        self.artifacts.where(name: name, package: module_rpm).first_or_create!
       end
     end
 
