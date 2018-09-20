@@ -1,0 +1,14 @@
+<%#
+name: Disable Module Stream - Katello Ansible Default
+snippet: false
+model: JobTemplate
+job_category: Katello via Ansible
+description_format: Disable module stream(s) %{module_spec}
+foreign_input_sets:
+- template: Module Action - Ansible Default
+  exclude: action
+provider_type: Ansible
+kind: job_template
+%>
+
+<%= render_template('Module Action - Ansible Default', :action => 'disable') %>

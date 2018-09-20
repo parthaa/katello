@@ -83,6 +83,22 @@ module Katello
       assert_includes ModuleStream.available_for_hosts([host.id]), @module_stream_river
     end
 
+    def test_module_spec
+      inputs = [
+        [{:name => "boo"}, "boo"],
+        [{:name => "boo", :stream => "100"}, "boo:100"],
+        [{:name => "boo", :stream => "100", :version => "11111"}, "boo:100:11111"],
+        [{:name => "boo", :stream => "100", :version => "11111", :context => "cccc"}, "boo:100:11111:cccc"],
+        [{:name => "boo", :stream => "100", :version => "11111", :context => "cccc", :arch => "noarch"}, "boo:100:11111:cccc:noarch"],
+        [{:name => "boo", :stream => "100", :version => "11111", :arch => "noarch"}, "boo:100:11111"],
+        [{:name => "boo", :stream => "100", :context => "cccc", :arch => "noarch"}, "boo:100"],
+        [{:name => "boo", :version => "11111", :context => "cccc", :arch => "noarch"}, "boo"]
+      ]
+      inputs.each do |params, expectation|
+        assert_equal expectation, ModuleStream.new(params).module_spec
+      end
+    end
+
     def pulp_module_data
       @pulp_module_data ||= {
         "repository_memberships" => [@fedora_repo.pulp_id],

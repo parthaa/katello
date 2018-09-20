@@ -277,6 +277,12 @@ Foreman::Plugin.register :katello do
     RemoteExecutionFeature.register(:katello_group_remove, N_("Katello: Remove Package Group"), :description => N_("Remove package group via Katello interface"), :provided_inputs => ['package'])
     RemoteExecutionFeature.register(:katello_errata_install, N_("Katello: Install Errata"), :description => N_("Install errata via Katello interface"), :provided_inputs => ['errata'])
     RemoteExecutionFeature.register(:katello_service_restart, N_("Katello: Service Restart"), :description => N_("Restart Services via Katello interface"), :provided_inputs => ['helpers'])
+    RemoteExecutionFeature.register(:katello_module_stream_install, N_("Katello: Install Module Stream"), :description => N_("Install module stream via Katello interface"), :provided_inputs => ['module_spec', 'options'])
+    RemoteExecutionFeature.register(:katello_module_stream_remove, N_("Katello: Remove Module Stream"), :description => N_("Remove module stream via Katello interface"), :provided_inputs => ['module_spec', 'options'])
+    RemoteExecutionFeature.register(:katello_module_stream_enable, N_("Katello: Enable Module Stream"), :description => N_("Enable module stream via Katello interface"), :provided_inputs => ['module_spec', 'options'])
+    RemoteExecutionFeature.register(:katello_module_stream_disable, N_("Katello: Disable Module Stream"), :description => N_("Disable module streams via Katello interface"), :provided_inputs => ['module_spec', 'options'])
+    RemoteExecutionFeature.register(:katello_module_stream_lock, N_("Katello: Lock Module Stream"), :description => N_("Lock module stream via Katello interface"), :provided_inputs => ['module_spec', 'options'])
+    RemoteExecutionFeature.register(:katello_module_stream_unlock, N_("Katello: Unlock Module Stream"), :description => N_("Unlock module stream via Katello interface"), :provided_inputs => ['module_spec', 'options'])
     allowed_template_helpers :errata
   end
 

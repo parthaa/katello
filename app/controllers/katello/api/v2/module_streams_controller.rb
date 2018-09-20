@@ -11,8 +11,8 @@ module Katello
     end
 
     def custom_index_relation(collection)
-      if params[:host_ids]
-        collection.available_for_hosts(params[:host_ids])
+      if @host_ids
+        collection.available_for_hosts(@host_ids)
       else
         collection
       end
@@ -25,9 +25,11 @@ module Katello
     private
 
     def check_hosts
-      if params[:host_ids] &&
-        ::Host::Managed.authorized("view_hosts").where(:id => params[:host_ids]).count != params[:host_ids].count
-        fail HttpErrors::NotFound, _('One or more hosts not found')
+      if params[:host_ids]
+        @host_ids = params[:host_ids].is_a?(Array) ? params[:host_ids] : params[:host_ids].split(",")
+        if ::Host::Managed.authorized("view_hosts").where(:id => @host_ids).count != @host_ids.count
+          fail HttpErrors::NotFound, _('One or more hosts not found')
+        end
       end
     end
   end

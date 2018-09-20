@@ -53,5 +53,18 @@ module Katello
     def self.available_for_hosts(hosts)
       joins(repositories: :content_facets).merge(Katello::Host::ContentFacet.where(host_id: hosts)).distinct
     end
+
+    def module_spec
+      # NAME:STREAM:VERSION:CONTEXT:ARCH
+      items = []
+      [name, stream, version, context, arch].each do |item|
+        if item
+          items << item
+        else
+          break
+        end
+      end
+      items.join(":")
+    end
   end
 end

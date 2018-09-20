@@ -1,0 +1,13 @@
+<%#
+kind: job_template
+name: Install Module Stream - Katello SSH Default
+job_category: Katello
+description_format: 'Install a module stream(s) %{module_spec}'
+feature: katello_module_stream_install
+provider_type: SSH
+foreign_input_sets:
+- template: Module Action - SSH Default
+  exclude: action
+%>
+
+<%= render_template('Module Action - SSH Default', :action => 'install') %>

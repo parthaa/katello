@@ -1,0 +1,13 @@
+<%#
+kind: job_template
+name: Enable Module Stream - Katello SSH Default
+job_category: Katello
+description_format: 'Enable a module stream(s) %{module_spec}'
+feature: katello_module_stream_enable
+provider_type: SSH
+foreign_input_sets:
+- template: Module Action - SSH Default
+  exclude: action
+%>
+
+<%= render_template('Module Action - SSH Default', :action => 'enable') %>
