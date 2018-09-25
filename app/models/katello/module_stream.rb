@@ -54,6 +54,10 @@ module Katello
       joins(repositories: :content_facets).merge(Katello::Host::ContentFacet.where(host_id: hosts)).distinct
     end
 
+    def name_stream_spec
+      "#{name}:#{stream}"
+    end
+
     def module_spec
       # NAME:STREAM:VERSION:CONTEXT:ARCH
       items = []
