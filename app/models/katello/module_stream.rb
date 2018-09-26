@@ -14,6 +14,10 @@ module Katello
     scoped_search on: :context, complete_value: true
     scoped_search on: :arch, complete_value: true
     scoped_search relation: :repositories, on: :name, rename: :repository, complete_value: true
+    scoped_search :on => :host_id, :rename => :host,
+                   :only_explicit => true,
+                   :ext_method => :find_by_host_id,
+                   :operators => ["="]
 
     CONTENT_TYPE = Pulp::ModuleStream::CONTENT_TYPE
     MODULE_STREAM_DEFAULT_CONTENT_TYPE = "modulemd_defaults".freeze
@@ -51,10 +55,15 @@ module Katello
     end
 
     def self.available_for_hosts(hosts)
-      joins(repositories: :content_facets).merge(Katello::Host::ContentFacet.where(host_id: hosts)).distinct
+      where("#{table_name}.id" => ::Katello::ModuleStream.joins(repositories: :content_facets).
+            merge(::Katello::Host::ContentFacet.where(host_id: hosts)).select("#{table_name}.id"))
     end
 
-    def name_stream_spec
+    def self.name_stream_only
+      select("#{table_name}.name", "#{table_name}.stream").distinct
+    end
+
+    def name_stream
       "#{name}:#{stream}"
     end
 
@@ -69,6 +78,13 @@ module Katello
         end
       end
       items.join(":")
+    end
+
+    def self.find_by_host_id(_key, operator, value)
+      if operator == '='
+        host_ids = value.is_a?(Array) ? value : value.split(",")
+              { :conditions => self.arel_table["id"].in(self.available_for_hosts(host_ids).select(:id))}
+      end
     end
   end
 end

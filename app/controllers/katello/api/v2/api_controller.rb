@@ -38,11 +38,11 @@ module Katello
     end
 
     def full_result_response(collection)
-      { :results => collection,
-        :total => collection.count,
+      { :results => collection.count(:all),
+        :total => collection.count(:all),
         :page => 1,
-        :per_page => collection.count,
-        :subtotal => collection.count }
+        :per_page => collection.count(:all),
+        :subtotal => collection.count(:all)}
     end
 
     def empty_search_query?
@@ -120,7 +120,7 @@ module Katello
       if group
         query.select(group).group(group).length
       else
-        query.count
+        query.count(:all)
       end
     end
 
