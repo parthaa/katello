@@ -56,15 +56,8 @@ module Katello
 
     def self.available_for_hosts(hosts)
       where("#{table_name}.id" => ::Katello::ModuleStream.joins(repositories: :content_facets).
-            merge(::Katello::Host::ContentFacet.where(host_id: hosts)).select("#{table_name}.id"))
-    end
-
-    def self.name_stream_only
-      select("#{table_name}.name", "#{table_name}.stream").distinct
-    end
-
-    def name_stream
-      "#{name}:#{stream}"
+            select("#{table_name}.id").
+            merge(::Katello::Host::ContentFacet.where(host_id: hosts)))
     end
 
     def module_spec

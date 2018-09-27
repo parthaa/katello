@@ -1,3 +1,3 @@
-object @resource
+object @object
 
 attributes :name, :stream

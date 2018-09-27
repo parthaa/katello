@@ -13,18 +13,15 @@ module Katello
     def index
       if @name_stream_only
         sort_by, sort_order, options = sort_options
-        binding.pry
-        respond(:collection => scoped_search(index_relation, sort_by, sort_order, options), :template => '../../../api/v2/module_streams/name_stream')
+        options[:group] = [:name, :stream]
+        respond(:collection => scoped_search(index_relation, sort_by, sort_order, options),
+                :template => 'name_streams')
       else
         super
       end
     end
 
     def custom_index_relation(collection)
-      if @name_stream_only
-        collection = collection.name_stream_only
-      end
-
       if @host_ids
         collection.available_for_hosts(@host_ids)
       else
