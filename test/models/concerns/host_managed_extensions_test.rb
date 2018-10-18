@@ -158,6 +158,14 @@ module Katello
       assert_includes ::Host::Managed.search_for("installed_package_name = foo"), @foreman_host
     end
   end
+  class HostEnabledReposTest < HostManagedExtensionsTestBase
+    def test_import_repos
+      repos_json = [{"repositoryid": "good", "baseurl": ["https://foo.com/pulp/repos/foo"]},
+                    {"repositoryid": "bad", "baseurl": []}]
+      @foreman_host.content_facet.expects(:update_repositories_by_paths).with([repos_json.first["baseurl"]])
+      @foreman_host.import_enabled_repositories(repos_json)
+    end
+  end
   class HostTracerTest < HostManagedExtensionsTestBase
     def setup
       super
