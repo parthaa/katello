@@ -5,7 +5,7 @@
  * @requires $scope
  * @resource $timeout
  * @resource $window
- * @requires ModuleStream
+ * @requires HostModuleStream
  * @requires Nutupane
  * @requires ModuleStreamActions
  *
@@ -13,15 +13,14 @@
  *   Provides the functionality for the content host module streams list and actions.
  */
 angular.module('Bastion.content-hosts').controller('ContentHostModuleStreamsController',
-    ['$scope', '$timeout', '$window', 'ModuleStream', 'Nutupane', 'BastionConfig', 'ModuleStreamActions',
-    function ($scope, $timeout, $window, ModuleStream, Nutupane, BastionConfig, ModuleStreamActions) {
+    ['$scope', '$timeout', '$window', 'HostModuleStream', 'Nutupane', 'BastionConfig', 'ModuleStreamActions',
+    function ($scope, $timeout, $window, HostModuleStream, Nutupane, BastionConfig, ModuleStreamActions) {
         $scope.moduleStreamActions = ModuleStreamActions.getActions();
 
         $scope.working = false;
 
-        $scope.moduleStreamsNutupane = new Nutupane(ModuleStream, {
-            'host_ids': [$scope.$stateParams.hostId],
-            'name_stream_only': '1'
+        $scope.moduleStreamsNutupane = new Nutupane(HostModuleStream, {
+            'id': $scope.$stateParams.hostId
         });
 
         $scope.moduleStreamsNutupane.masterOnly = true;
