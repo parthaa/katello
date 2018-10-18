@@ -32,6 +32,8 @@
           <tr bst-table-head>
             <th bst-table-column translate>Name</th>
             <th bst-table-column translate>Stream</th>
+            <th bst-table-column translate>Status</th>
+            <th bst-table-column translate>Installed Profile</th>
             <th bst-table-column translate>Actions</th>
           </tr>
         </thead>
@@ -42,6 +44,16 @@
               <a href="/module_streams?search=module_spec%3D{{ module.module_spec }}+and+host%3D{{ host.name }}">
               {{ module.name }}</a></td>
             <td bst-table-cell>{{ module.stream }}</td>
+            <td bst-table-cell>
+              <div ng-if="module.installed_profiles.length > 0 " translate> Installed</div>
+              <div ng-if="module.installed_profiles.length === 0">
+                  <div ng-if="module.status ===  'enabled'" translate> Enabled </div>
+                  <div ng-if="module.status ===  'disabled'"> Disabled </div>
+              </div>
+            </td>
+            <td bst-table-cell>
+              {{ module.installed_profiles.join(",") }}
+            </td>
             <td bst-table-cell>
               <div class="dropdown" ng-hide="!remoteExecutionPresent || denied('edit_content_hosts', contentHost)">
                 <button class="btn btn-default dropdown-toggle" ng-disabled="$scope.working" type="button" id="dropdownMenu1" data-toggle="dropdown"> Actions
