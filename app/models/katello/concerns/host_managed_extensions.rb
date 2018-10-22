@@ -35,6 +35,10 @@ module Katello
 
         has_many :host_installed_packages, :class_name => "::Katello::HostInstalledPackage", :foreign_key => :host_id, :dependent => :delete_all
         has_many :installed_packages, :class_name => "::Katello::InstalledPackage", :through => :host_installed_packages
+
+        has_many :host_enabled_module_streams, :class_name => "::Katello::HostEnabledModuleStream", :foreign_key => :host_id, :dependent => :delete_all
+        has_many :enabled_module_streams, :class_name => "::Katello::EnabledModuleStream", :through => :host_enabled_module_streams
+
         has_many :host_traces, :class_name => "::Katello::HostTracer", :foreign_key => :host_id, :dependent => :destroy
 
         has_many :host_collection_hosts, :class_name => "::Katello::HostCollectionHosts", :foreign_key => :host_id, :dependent => :destroy
@@ -49,6 +53,8 @@ module Katello
         scoped_search :relation => :host_collections, :on => :name, :complete_value => true, :rename => :host_collection
         scoped_search :relation => :installed_packages, :on => :nvra, :complete_value => true, :rename => :installed_package, :only_explicit => true
         scoped_search :relation => :installed_packages, :on => :name, :complete_value => true, :rename => :installed_package_name, :only_explicit => true
+        scoped_search :relation => :enabled_module_streams, :on => :name, :complete_value => true, :rename => :enabled_module_stream_name, :only_explicit => true
+        scoped_search :relation => :enabled_module_streams, :on => :stream, :complete_value => true, :rename => :enabled_module_stream_stream, :only_explicit => true
         scoped_search :relation => :host_traces, :on => :application, :complete_value => true, :rename => :trace_app, :only_explicit => true
         scoped_search :relation => :host_traces, :on => :app_type, :complete_value => true, :rename => :trace_app_type, :only_explicit => true
         scoped_search :relation => :host_traces, :on => :helper, :complete_value => true, :rename => :trace_helper, :only_explicit => true
@@ -124,6 +130,36 @@ module Katello
 
       def import_module_streams(module_streams)
         # TODO: Implement this when module stream support is added
+        streams = []
+        module_streams.each do |module_stream|
+          streams << (EnabledModuleStream.where(name: module_stream[:name], stream: module_stream[:stream]).first_or_create!)
+        end
+        sync_enabled_module_stream_associations(streams.map(&:id))
+      end
+
+      def sync_enabled_module_stream_associations(new_enabled_module_stream_ids)
+        old_associated_ids = self.enabled_module_stream_ids
+        table_name = self.host_enabled_module_streams.table_name
+
+        new_ids = new_enabled_module_stream_ids - old_associated_ids
+        delete_ids = old_associated_ids - new_enabled_module_stream_ids
+
+        queries = []
+
+        if delete_ids.any?
+          queries << "DELETE FROM #{table_name} WHERE host_id=#{self.id} AND enabled_module_stream_id IN (#{delete_ids.join(', ')})"
+        end
+
+        unless new_ids.empty?
+          inserts = new_ids.map { |unit_id| "(#{unit_id.to_i}, #{self.id.to_i})" }
+          queries << "INSERT INTO #{table_name} (enabled_module_stream_id, host_id) VALUES #{inserts.join(', ')}"
+        end
+
+        ActiveRecord::Base.transaction do
+          queries.each do |query|
+            ActiveRecord::Base.connection.execute(query)
+          end
+        end
       end
 
       def sync_package_associations(new_installed_package_ids)

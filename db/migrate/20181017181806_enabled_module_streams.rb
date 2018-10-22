@@ -3,11 +3,6 @@ class EnabledModuleStreams < ActiveRecord::Migration[5.2]
     create_table :katello_enabled_module_streams do |t|
       t.string :name
       t.string :version
-      t.string :context
-      t.string :stream
-      t.string :arch
-      t.text :profiles
-      t.timestamps
     end
 
     create_table :katello_host_enabled_module_streams do |t|

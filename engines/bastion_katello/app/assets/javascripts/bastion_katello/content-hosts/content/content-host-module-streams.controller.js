@@ -20,7 +20,7 @@ angular.module('Bastion.content-hosts').controller('ContentHostModuleStreamsCont
         $scope.working = false;
 
         $scope.moduleStreamsNutupane = new Nutupane(ModuleStream, {
-            'host_ids': [$scope.$stateParams.hostId],
+            'host_id': $scope.$stateParams.hostId,
             'name_stream_only': '1'
         });
 

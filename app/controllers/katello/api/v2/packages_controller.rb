@@ -73,13 +73,6 @@ module Katello
 
     private
 
-    def find_host
-      if params[:host_id]
-        @host = ::Host::Managed.authorized("view_hosts").find_by(:id => params[:host_id])
-        fail HttpErrors::NotFound, _('Could not find a host with id %s') % params[:host_id] unless @host
-      end
-    end
-
     def find_repositories
       @repositories = Repository.readable.where(:id => params[:repoids])
     end
