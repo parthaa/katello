@@ -19,6 +19,9 @@ module Katello
       has_many :content_facet_applicable_rpms, :class_name => "Katello::ContentFacetApplicableRpm", :dependent => :delete_all, :inverse_of => :content_facet
       has_many :applicable_rpms, :through => :content_facet_applicable_rpms, :class_name => "Katello::Rpm", :source => :rpm
 
+      has_many :content_facet_applicable_module_streams, :class_name => "Katello::ContentFacetApplicableModuleStream", :dependent => :delete_all, :inverse_of => :content_facet
+      has_many :applicable_module_streams, :through => :content_facet_applicable_module_streams, :class_name => "Katello::ModuleStream", :source => :module_stream
+
       validates :content_view, :presence => true, :allow_blank => false
       validates :lifecycle_environment, :presence => true, :allow_blank => false
       validates_with ::AssociationExistsValidator, attributes: [:content_source]
@@ -66,6 +69,15 @@ module Katello
         self.applicable_rpms.in_repositories(repos)
       end
 
+      def installable_module_streams(env = nil, content_view = nil)
+        repos = if env && content_view
+                  Katello::Repository.in_environment(env).in_content_views([content_view])
+                else
+                  self.bound_repositories.pluck(:id)
+                end
+        self.applicable_module_streams.in_repositories(repos)
+      end
+
       def errata_counts
         hash = {
           :security => installable_security_errata_count,
@@ -77,6 +89,7 @@ module Katello
       end
 
       def import_applicability(partial = false)
+        import_module_stream_applicability(partial)
         import_errata_applicability(partial)
         import_rpm_applicability(partial)
         update_applicability_counts
@@ -88,7 +101,9 @@ module Katello
             :installable_bugfix_errata_count => self.installable_errata.bugfix.count,
             :installable_enhancement_errata_count => self.installable_errata.enhancement.count,
             :applicable_rpm_count => self.content_facet_applicable_rpms.count,
-            :upgradable_rpm_count => self.installable_rpms.count
+            :upgradable_rpm_count => self.installable_rpms.count,
+            :applicable_module_stream_count => self.content_facet_applicable_module_streams.count,
+            :upgradable_module_stream_count => self.installable_module_streams.count
         )
         self.save!(:validate => false)
       end
@@ -136,6 +151,28 @@ module Katello
           to_remove = nil
         end
         [to_add, to_remove]
+      end
+
+      def applicable_module_stream_differences(partial)
+        module_stream_uuids = ::Katello::Pulp::Consumer.new(self.uuid).applicable_module_stream_ids
+        if partial
+          consumer_uuids = applicable_module_streams.pluck("#{ModuleStream.table_name}.uuid")
+          to_remove = consumer_uuids - module_stream_uuids
+          to_add = module_stream_uuids - consumer_uuids
+        else
+          to_add = module_stream_uuids
+          to_remove = nil
+        end
+        [to_add, to_remove]
+      end
+
+      def import_module_stream_applicability(partial)
+        to_add, to_remove = applicable_module_stream_differences(partial)
+        Katello::ContentFacetApplicableModuleStream.where(:content_facet_id => self.id).delete_all unless partial
+        ActiveRecord::Base.transaction do
+          insert_module_stream_applicability(to_add) unless to_add.blank?
+          remove_module_stream_applicability(to_remove) unless to_remove.blank?
+        end
       end
 
       def self.in_content_view_version_environments(version_environments)
@@ -236,6 +273,20 @@ module Katello
       def remove_errata_applicability(uuids)
         applicable_errata_ids = ::Katello::Erratum.where(:uuid => uuids).pluck(:id)
         Katello::ContentFacetErratum.where(:content_facet_id => self.id, :erratum_id => applicable_errata_ids).delete_all
+      end
+
+      def insert_module_stream_applicability(uuids)
+        applicable_module_stream_ids = ::Katello::ModuleStream.where(:uuid => uuids).pluck(:id)
+        unless applicable_module_stream_ids.empty?
+          inserts = applicable_module_stream_ids.map { |erratum_id| "(#{erratum_id.to_i}, #{self.id.to_i})" }
+          sql = "INSERT INTO #{Katello::ContentFacetApplicableModuleStream.table_name} (module_stream_id, content_facet_id) VALUES #{inserts.join(', ')}"
+          ActiveRecord::Base.connection.execute(sql)
+        end
+      end
+
+      def remove_module_stream_applicability(uuids)
+        applicable_module_stream_ids = ::Katello::ModuleStream.where(:uuid => uuids).pluck(:id)
+        Katello::ContentFacetApplicableModuleStream.where(:content_facet_id => self.id, :module_stream_id => applicable_module_stream_ids).delete_all
       end
     end
   end

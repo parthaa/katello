@@ -10,6 +10,10 @@ module Katello
     has_many :module_stream_errata_packages, class_name: "Katello::ModuleStreamErratumPackage", dependent: :destroy, inverse_of: :module_stream
     has_many :erratum_packages, class_name: "Katello::ErratumPackage", :through => :module_stream_errata_packages
 
+    has_many :content_facet_applicable_module_streams, :class_name => "Katello::ContentFacetApplicableModuleStream",
+             :dependent => :destroy, :inverse_of => :module_stream
+    has_many :content_facets, :through => :content_facet_applicable_module_streams, :class_name => "Katello::Host::ContentFacet"
+
     scoped_search on: :name, complete_value: true
     scoped_search on: :uuid, complete_value: true
     scoped_search on: :stream, complete_value: true

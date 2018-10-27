@@ -218,6 +218,42 @@ module Katello
     end
   end
 
+  class ContentFacetModuleStreamTest < ContentFacetBase
+    let(:host_one) { hosts(:one) }
+    let(:host_two) { hosts(:two) }
+    let(:repo) { katello_repositories(:fedora_17_x86_64) }
+    let(:module_stream_one) { katello_module_streams(:one) }
+    let(:module_stream_two) { katello_module_streams(:two) }
+    let(:module_stream_three) { katello_module_streams(:three) }
+
+    def test_update_applicability_counts
+      assert_includes module_stream_one.repositories, repo
+      module_stream_two.repositories = []
+      host_one.content_facet.bound_repositories << repo
+
+      #shouldn't matter if facet is invalid
+      host_one.content_facet.lifecycle_environment = katello_environments(:qa_path2)
+      refute host_one.valid?
+
+      host_one.content_facet.update_applicability_counts
+
+      assert_equal 2, host_one.content_facet.applicable_module_stream_count
+      assert_equal 1, host_one.content_facet.upgradable_module_stream_count
+    end
+
+    def test_installable_module_streams
+      lib_applicable = host_one.applicable_module_streams
+      cf_one = host_one.content_facet
+
+      cf_one.bound_repositories = []
+      cf_one.save!
+
+      assert_equal_arrays lib_applicable, cf_one.applicable_module_streams
+      refute_equal_arrays lib_applicable, cf_one.installable_module_streams
+      refute_includes cf_one.installable_module_streams, module_stream_one
+    end
+  end
+
   class ImportErrataApplicabilityTest < ContentFacetBase
     let(:enhancement_errata) { katello_errata(:enhancement) }
 
@@ -287,6 +323,35 @@ module Katello
       content_facet.import_rpm_applicability(false)
 
       assert_equal [rpm], content_facet.reload.applicable_rpms
+    end
+  end
+
+  class ImportModuleStreamApplicabilityTest < ContentFacetBase
+    let(:module_stream) { katello_module_streams(:three) }
+
+    def test_partial_import
+      refute_includes host.content_facet.applicable_module_streams, module_stream
+
+      ::Katello::Pulp::Consumer.any_instance.stubs(:applicable_module_stream_ids).returns([module_stream.uuid])
+      content_facet.import_module_stream_applicability(true)
+
+      assert_equal [module_stream], content_facet.reload.applicable_module_streams
+    end
+
+    def test_partial_import_empty
+      content_facet.applicable_module_streams << module_stream
+
+      ::Katello::Pulp::Consumer.any_instance.stubs(:applicable_module_stream_ids).returns([])
+      content_facet.import_module_stream_applicability(true)
+
+      assert_empty content_facet.reload.applicable_module_streams
+    end
+
+    def test_full_import
+      ::Katello::Pulp::Consumer.any_instance.stubs(:applicable_module_stream_ids).returns([module_stream.uuid])
+      content_facet.import_module_stream_applicability(false)
+
+      assert_equal [module_stream], content_facet.reload.applicable_module_streams
     end
   end
 
