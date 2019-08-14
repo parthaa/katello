@@ -34,6 +34,7 @@ module Katello
     param :end_date, String, :desc => N_("erratum: end date (YYYY-MM-DD)")
     param :types, Array, :desc => N_("erratum: types (enhancement, bugfix, security)")
     param :date_type, String, :desc => N_("erratum: search using the 'Issued On' or 'Updated On' column of the errata. Values are 'issued'/'updated'")
+    param :module_stream_ids, String, :desc => N_("module stream ids")
     def create
       rule_clazz = ContentViewFilter.rule_class_for(@filter)
 
@@ -44,6 +45,11 @@ module Katello
       rules += (rule_params[:errata_ids] || []).map do |errata_id|
         rule_clazz.create!(rule_params.except(:errata_ids)
           .merge(filter: @filter, errata_id: errata_id))
+      end
+
+      rules += (rule_params[:module_stream_ids] || []).map do |module_stream_id|
+        rule_clazz.create!(rule_params.except(:module_stream_ids)
+          .merge(filter: @filter, module_stream_id: module_stream_id))
       end
 
       if rules.empty?
@@ -117,6 +123,11 @@ module Katello
           params[:content_view_filter_rule][:errata_ids] = ids
         end
 
+        if params[:content_view_filter_rule][:module_stream_ids].is_a?(Hash)
+          ids = process_module_stream_ids(params[:content_view_filter_rule][:module_stream_ids])
+          params[:content_view_filter_rule][:module_stream_ids] = ids
+        end
+
         if params[:name]
           params[:content_view_filter_rule][:name] = params[:name] = [params[:name]].flatten
         end
@@ -125,7 +136,7 @@ module Katello
       @rule_params ||= params.fetch(:content_view_filter_rule, {}).
             permit(:uuid, :version, :min_version, :max_version, :architecture,
                     :errata_id, :start_date, :end_date, :date_type,
-                    :types => [], :errata_ids => [], name: [])
+                    :types => [], :module_stream_ids => [], :errata_ids => [], name: [])
     end
 
     def process_errata_ids(select_all_params)
@@ -135,6 +146,18 @@ module Katello
         query = Erratum
         query = query.where('errata_id not in (?)', current_errata_ids) unless current_errata_ids.empty?
         query.in_repositories(@filter.applicable_repos).pluck(:errata_id)
+      else
+        []
+      end
+    end
+
+    def process_module_stream_ids(select_all_params)
+      if select_all_params[:included][:ids].blank?
+        select_all_params[:excluded][:ids] ||= [] if select_all_params[:excluded][:ids].nil?
+        current_module_stream_ids = @filter.module_stream_rules.map(&:module_stream_id) + select_all_params[:excluded][:ids]
+        query = ModuleStream
+        query = query.where('id not in (?)', current_module_stream_ids) unless current_module_stream_ids.empty?
+        query.in_repositories(@filter.applicable_repos).pluck(:id)
       else
         []
       end
