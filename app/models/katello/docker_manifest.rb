@@ -17,6 +17,8 @@ module Katello
     scoped_search :on => :schema_version, :rename => :schema_version, :complete_value => true, :only_explicit => true
     scoped_search :relation => :docker_manifest_lists, :on => :digest, :rename => :manifest_list_digest, :complete_value => true, :only_explicit => true
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.repository_association_class
       RepositoryDockerManifest
     end

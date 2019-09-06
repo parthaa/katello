@@ -11,6 +11,8 @@ module Katello
     scoped_search :on => :name, :complete_value => true
     scoped_search :on => :pulp_id, :rename => :id, :complete_value => true
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.repository_association_class
       RepositoryPackageGroup
     end

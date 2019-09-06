@@ -8,6 +8,7 @@ module Katello
     has_many :repositories, :through => :repository_srpms, :class_name => "Katello::Repository"
 
     before_save lambda { |rpm| rpm.summary = rpm.summary.truncate(255) unless rpm.summary.blank? }
+    include Katello::Concerns::SearchByRepositoryName
 
     def self.default_sort
       order(:name).order(:epoch).order(:version_sortable).order(:release_sortable)

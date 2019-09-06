@@ -44,6 +44,8 @@ module Katello
 
     before_save lambda { |erratum| erratum.title = erratum.title.truncate(255) unless erratum.title.blank? }
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.of_type(type)
       where(:errata_type => type)
     end

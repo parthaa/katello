@@ -34,6 +34,8 @@ module Katello
     CONTENT_TYPE = "modulemd".freeze
     MODULE_STREAM_DEFAULT_CONTENT_TYPE = "modulemd_defaults".freeze
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.default_sort
       order(:name)
     end

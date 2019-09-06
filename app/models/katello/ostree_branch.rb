@@ -12,6 +12,8 @@ module Katello
 
     CONTENT_TYPE = "ostree".freeze
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.repository_association_class
       RepositoryOstreeBranch
     end

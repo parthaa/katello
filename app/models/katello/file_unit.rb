@@ -13,6 +13,8 @@ module Katello
     scoped_search :on => :path, :complete_value => true
     scoped_search :on => :checksum
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.default_sort
       order(:name)
     end

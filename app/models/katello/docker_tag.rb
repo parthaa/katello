@@ -17,6 +17,8 @@ module Katello
 
     before_destroy :cleanup_meta_tags
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.repository_association_class
       RepositoryDockerTag
     end

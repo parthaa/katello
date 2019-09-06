@@ -29,6 +29,7 @@ module Katello
     validates :author, :presence => true
 
     before_save :set_sortable_version
+    include Katello::Concerns::SearchByRepositoryName
 
     def self.latest_module(name, author, repositories)
       in_repositories(repositories).where(:name => name, :author => author).

@@ -3,8 +3,6 @@ require 'set'
 module Katello
   module Concerns::PulpDatabaseUnit
     extend ActiveSupport::Concern
-    include Katello::Concerns::SearchByRepositoryName
-
     #  Class.repository_association_class
 
     def backend_data

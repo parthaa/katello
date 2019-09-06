@@ -15,6 +15,8 @@ module Katello
 
     before_save lambda { |deb| deb.description = deb.description.truncate(255) unless deb.description.blank? }
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.default_sort
       order(:name).order(:version).order(:architecture)
     end

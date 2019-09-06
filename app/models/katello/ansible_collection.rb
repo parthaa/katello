@@ -18,6 +18,8 @@ module Katello
     scoped_search :on => :checksum, :complete_value => true
     scoped_search :on => :name, :complete_value => true, :relation => :tags, :rename => :tag
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.default_sort
       order(:name)
     end

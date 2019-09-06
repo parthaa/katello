@@ -27,6 +27,8 @@ module Katello
     scope :modular, -> { where(modular: true) }
     scope :non_modular, -> { where(modular: false) }
 
+    include Katello::Concerns::SearchByRepositoryName
+
     def self.default_sort
       order(:name).order(:epoch).order(:version_sortable).order(:release_sortable)
     end
