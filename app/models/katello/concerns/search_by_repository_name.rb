@@ -5,7 +5,17 @@ module Katello
       include ScopedSearchExtensions
 
       included do
-        scoped_search :relation => :repositories, :on => :name, :rename => :repository, :complete_value => true, :ext_method => :search_by_repo_name, :only_explicit => true
+        has_many :root_repositories, through: :repositories, :source => :root, class_name: "Katello::RootRepository"
+        scoped_search :relation => :root_repositories, :on => :name, :rename => :repository,
+                      :complete_value => true,
+                      :ext_method => :search_by_repo_name, :only_explicit => true
+      end
+
+      def self.setup_units
+        repo_unit_classes = ::Katello::RepositoryTypeManager.repository_types.values.map{|t| t.content_types.map(&:model_class) }.flatten
+        repo_unit_classes = repo_unit_classes.select {|klazz| klazz <= ::Katello::Concerns::PulpDatabaseUnit &&
+                                                              klazz.many_repository_associations}
+        repo_unit_classes.each {|klazz| klazz.send :include, SearchByRepositoryName}
       end
 
       module ClassMethods

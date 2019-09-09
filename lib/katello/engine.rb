@@ -212,6 +212,8 @@ module Katello
 
       load 'katello/repository_types.rb'
       load 'katello/scheduled_jobs.rb'
+      # Add Scoped Search for pulp database units
+      ::Katello::Concerns::SearchByRepositoryName.setup_units
     end
 
     rake_tasks do
