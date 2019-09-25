@@ -10,14 +10,17 @@ module Actions
           purge_empty_contents = options.fetch(:purge_empty_contents, false)
           copy_contents = options.fetch(:copy_contents, true)
           solve_dependencies = options.fetch(:solve_dependencies, false)
-
+          repository_mapping = options.fetch(:repository_mapping, nil)
           sequence do
             if copy_contents
               plan_pulp_action([Pulp3::Orchestration::Repository::CopyAllUnits, Pulp::Orchestration::Repository::CopyAllUnits],
                           new_repository,
                           SmartProxy.pulp_master,
                           source_repositories,
-                          filters: filters, rpm_filenames: rpm_filenames, solve_dependencies: solve_dependencies)
+                          filters: filters,
+                          rpm_filenames: rpm_filenames,
+                          solve_dependencies: solve_dependencies,
+                          repository_mapping: repository_mapping)
             end
 
             metadata_generate(source_repositories, new_repository, filters, rpm_filenames) if generate_metadata
@@ -27,7 +30,9 @@ module Actions
             plan_action(Katello::Repository::IndexContent, index_options)
 
             if purge_empty_contents && new_repository.backend_service(SmartProxy.pulp_master).should_purge_empty_contents?
-              plan_action(Katello::Repository::PurgeEmptyContent, id: new_repository.id)
+              purge_options = {id: new_repository.id }
+              purge_options[:repository_mapping] = repository_mapping if repository_mapping && solve_dependencies
+              plan_action(Katello::Repository::PurgeEmptyContent, purge_options)
             end
           end
         end

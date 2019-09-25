@@ -47,15 +47,24 @@ module Katello
 
         def self.build_override_config(options)
           config = {}
-          if options[:filters].present? && (options[:solve_dependencies] || options[:resolve_dependencies])
+          if options[:incremental] ||
+              (options[:filters].present? && (options[:solve_dependencies] || options[:resolve_dependencies]))
             if Setting[:dependency_solving_algorithm] == 'greedy'
               config[:recursive] = true
             else
               config[:recursive_conservative] = true
             end
+            config[:additional_repos] = options[:repository_mapping] unless options[:repository_mapping].blank?
           end
-
           config
+        end
+
+        def self.generate_yum_dependent_repositories(cloned_repos = {})
+          ret = {}
+          cloned_repos.each do |source, dest|
+            ret[source.first.pulp_id] = dest.pulp_id if source.first.yum?
+          end
+          ret
         end
       end
     end

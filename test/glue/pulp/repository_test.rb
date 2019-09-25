@@ -90,9 +90,19 @@ module Katello
     end
   end
 
-  class GluePulpNonVcrTests < GluePulpRepoTestBase
-    SHA1 = "sha1".freeze
-    SHA256 = "sha256".freeze
+  class GlueDepSolveNonVcrTests < GluePulpRepoTestBase
+    def test_generate_yum_dependent_repositories
+      repo_mapping = { [@fedora_17_x86_64] => @fedora_17_x86_64_dev }
+      result = ::Katello::Repository.generate_yum_dependent_repositories(repo_mapping)
+      assert_equal({ @fedora_17_x86_64.pulp_id => @fedora_17_x86_64_dev.pulp_id }, result)
+    end
+
+    def test_generate_yum_dependent_repositories_for_non_yuum
+      repo_mapping = { [@fedora_17_x86_64] => @fedora_17_x86_64_dev,
+                       [katello_repositories(:busybox)] => katello_repositories(:busybox_dev) }
+      result = ::Katello::Repository.generate_yum_dependent_repositories(repo_mapping)
+      assert_equal({ @fedora_17_x86_64.pulp_id => @fedora_17_x86_64_dev.pulp_id }, result)
+    end
 
     def test_build_override_config_dep_solve_and_filters
       rule = FactoryBot.build(:katello_content_view_package_filter_rule)
@@ -106,6 +116,11 @@ module Katello
       override_config = ::Katello::Repository.build_override_config(options)
       assert_nil override_config[:recursive_conservative]
     end
+  end
+
+  class GluePulpNonVcrTests < GluePulpRepoTestBase
+    SHA1 = "sha1".freeze
+    SHA256 = "sha256".freeze
 
     def test_populate_from
       assert @fedora_17_x86_64.populate_from(@fedora_17_x86_64.pulp_id => {})

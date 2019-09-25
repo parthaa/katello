@@ -78,8 +78,11 @@ module Katello
         def copy_contents(destination_repo, options = {})
           override_config = Katello::Repository.build_override_config(options)
           rpm_copy_clauses, rpm_remove_clauses = generate_copy_clauses(options[:filters]&.yum(false), options[:rpm_filenames])
-          tasks = [smart_proxy.pulp_api.extensions.rpm.copy(repo.pulp_id, destination_repo.pulp_id,
-                   rpm_copy_clauses.merge(:override_config => override_config))]
+          tasks = []
+          if rpm_copy_clauses
+            tasks << smart_proxy.pulp_api.extensions.rpm.copy(repo.pulp_id, destination_repo.pulp_id,
+                      rpm_copy_clauses.merge(:override_config => override_config))
+          end
 
           if rpm_remove_clauses
             tasks << smart_proxy.pulp_api.extensions.repository.unassociate_units(destination_repo.pulp_id,
@@ -122,17 +125,17 @@ module Katello
           end
         end
 
-        def purge_empty_contents
-          [purge_partial_errata, purge_empty_package_groups]
+        def purge_empty_contents(repository_mapping = {})
+          [purge_partial_errata(repository_mapping), purge_empty_package_groups(repository_mapping)]
         end
 
         def should_purge_empty_contents?
           true
         end
 
-        def purge_partial_errata
+        def purge_partial_errata(repository_mapping = {})
           task = nil
-          repo.remove_partial_errata! do |errata_to_delete|
+          repo.remove_partial_errata!(repository_mapping) do |errata_to_delete|
             task = repo.unassociate_by_filter(::Katello::ContentViewErratumFilter::CONTENT_TYPE,
                                                 "id" => { "$in" => errata_to_delete.map(&:errata_id) })
           end
@@ -141,7 +144,7 @@ module Katello
 
         private
 
-        def purge_empty_package_groups
+        def purge_empty_package_groups(_ = {})
           rpm_names = repo.rpms.pluck(:name).uniq
 
           # Remove all  package groups with no packages
@@ -169,6 +172,16 @@ module Katello
                                                                          type_ids: [::Katello::Pulp::ModuleStream::CONTENT_TYPE],
                                                                           filters: {unit: remove_clauses})
           end
+
+          if filters.blank? || !filters.exists?
+            # copy the modular rpms separately in the case of the incremental update or no module stream
+            # filters are provided for this repo,
+            # The issue here is that modular rpms may be in a separate repo from modules themselves
+            # Hence merely copying a module from repo1 to repo2 will not automatically copy the dependent artifacts
+            modular_includes = {filters: {unit: { 'filename' => { '$in' => repo.rpms.modular.pluck(:filename) } }}}
+            tasks << smart_proxy.pulp_api.extensions.rpm.copy(repo.pulp_id, destination_repo.pulp_id, modular_includes)
+          end
+
           tasks
         end
 
@@ -203,11 +216,12 @@ module Katello
             remove = clause_gen.remove_clause
             remove_clauses = {filters: {unit: remove}} if remove
           else
-            copy_clauses = {filters: {unit: ContentViewPackageFilter.generate_rpm_clauses(::Katello::Rpm.in_repositories(repo).non_modular.pluck(:filename))}}
+            non_modular_rpms = ::Katello::Rpm.in_repositories(repo).non_modular.pluck(:filename)
+            copy_clauses = non_modular_rpms.blank? ? nil : {filters: {unit: ContentViewPackageFilter.generate_rpm_clauses(non_modular_rpms)}}
             remove_clauses = nil
           end
 
-          copy_clauses.merge!(fields: ::Katello::Pulp::Rpm::PULP_SELECT_FIELDS)
+          copy_clauses.merge!(fields: ::Katello::Pulp::Rpm::PULP_SELECT_FIELDS) if copy_clauses
           [copy_clauses, remove_clauses]
         end
       end

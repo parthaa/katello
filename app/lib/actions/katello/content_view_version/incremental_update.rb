@@ -36,11 +36,21 @@ module Actions
                                                           :notes => description)
 
           copy_action_outputs = []
+          repos_to_clone = repos_to_copy(old_version, new_components)
 
           sequence do
+            repository_mapping = plan_action(ContentViewVersion::CreateRepos, new_content_view_version, repos_to_clone).repository_mapping
+            repos_to_clone.each do |source_repos|
+              plan_action(Repository::CloneToVersion,
+                          source_repos,
+                          new_content_view_version,
+                          repository_mapping[source_repos],
+                          :incremental => true)
+            end
+
             concurrence do
-              repos_to_copy(old_version, new_components).each do |source_repos|
-                copy_action_outputs += copy_repos(source_repos, new_content_view_version, content, dep_solve)
+              repos_to_clone.each do |source_repos|
+                copy_action_outputs += copy_repos(source_repos, new_content_view_version, content, dep_solve, repository_mapping)
               end
 
               sequence do
@@ -64,13 +74,16 @@ module Actions
           end
         end
 
-        def copy_repos(source_repos, new_version, content, dep_solve)
+        def copy_repos(source_repos, new_version, content, dep_solve, repository_mapping)
+          new_repo = repository_mapping[source_repos]
           copy_output = []
           sequence do
-            new_repo = plan_action(Repository::CloneToVersion, source_repos, new_version, :incremental => true).new_repository
             solve_dependencies = new_version.content_view.solve_dependencies || dep_solve
             copy_output += copy_deb_content(new_repo, solve_dependencies, content[:deb_ids])
-            copy_output += copy_yum_content(new_repo, solve_dependencies, content[:package_ids], content[:errata_ids])
+            copy_output += copy_yum_content(new_repo, solve_dependencies,
+                                            content[:package_ids],
+                                            content[:errata_ids],
+                                            repository_mapping.except(source_repos))
 
             plan_action(Katello::Repository::MetadataGenerate, new_repo)
             plan_action(Katello::Repository::IndexContent, id: new_repo.id)
@@ -222,25 +235,31 @@ module Actions
             unless deb_ids.blank?
               copy_outputs << plan_action(Pulp::Repository::CopyUnits, new_repo.library_instance, new_repo,
                                           ::Katello::Deb.with_identifiers(deb_ids),
-                                        resolve_dependencies: dep_solve).output
+                                        resolve_dependencies: dep_solve,
+                                        incremental: true).output
             end
           end
           copy_outputs
         end
 
-        def copy_yum_content(new_repo, dep_solve, package_ids, errata_ids)
+        def copy_yum_content(new_repo, dep_solve, package_ids, errata_ids, repository_mapping)
+          new_repository_mapping = Hash[repository_mapping.map { |source_repos, dest| [source_repos.map(&:library_instance), dest] }]
           copy_outputs = []
+          options = { resolve_dependencies: dep_solve,
+                      repository_mapping: ::Katello::Repository.generate_yum_dependent_repositories(new_repository_mapping),
+                      incremental: true }
           if new_repo.content_type == ::Katello::Repository::YUM_TYPE
             unless errata_ids.blank?
               copy_outputs << plan_action(Pulp::Repository::CopyUnits, new_repo.library_instance, new_repo,
                                         ::Katello::Erratum.with_identifiers(errata_ids),
-                                        resolve_dependencies: dep_solve).output
+                                        options
+                                        ).output
             end
 
             unless package_ids.blank?
               copy_outputs << plan_action(Pulp::Repository::CopyUnits, new_repo.library_instance, new_repo,
                                         ::Katello::Rpm.with_identifiers(package_ids),
-                                        resolve_dependencies: dep_solve).output
+                                        options).output
             end
           end
           copy_outputs

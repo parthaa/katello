@@ -276,29 +276,34 @@ module Katello
       redhat? ? "redhat" : "custom"
     end
 
-    def self.errata_with_package_counts(repo)
+    def self.errata_with_package_counts(repo, repository_mapping = {})
       repository_rpm = Katello::RepositoryRpm.table_name
       repository_errata = Katello::RepositoryErratum.table_name
       rpm = Katello::Rpm.table_name
       errata = Katello::Erratum.table_name
       erratum_package = Katello::ErratumPackage.table_name
+      repositories_to_search = [repo.id]
+      repositories_to_search += Repository.where(:pulp_id => repository_mapping.keys).pluck(:id) unless repository_mapping.blank?
+      where_clause = repositories_to_search.map do |repo_id|
+        "(#{repository_rpm}.repository_id = #{repo_id} and #{repository_errata}.repository_id = #{repo_id})"
+      end
+
       ::Katello::Erratum.joins(
         "INNER JOIN #{erratum_package} on #{erratum_package}.erratum_id = #{errata}.id",
         "INNER JOIN #{repository_errata} on #{repository_errata}.erratum_id = #{errata}.id",
         "INNER JOIN #{rpm} on #{rpm}.filename = #{erratum_package}.filename",
         "INNER JOIN #{repository_rpm} on #{repository_rpm}.rpm_id = #{rpm}.id").
-        where("#{repository_rpm}.repository_id" => repo.id).
-        where("#{repository_errata}.repository_id" => repo.id).
-        group("#{errata}.id").count
+         where(where_clause.join(" OR ")).
+         group("#{errata}.id").count
     end
 
-    def partial_errata
+    def partial_errata(repository_mapping = {})
       return [] if library_instance?
 
-      errata_with_package_counts = ::Katello::Repository.errata_with_package_counts(self)
+      errata_with_package_counts = ::Katello::Repository.errata_with_package_counts(self, repository_mapping)
       partial_errata = self.errata
       if errata_with_package_counts.any?
-        errata_with_packages_in_library = ::Katello::Repository.errata_with_package_counts(library_instance)
+        errata_with_packages_in_library = ::Katello::Repository.errata_with_package_counts(library_instance, repository_mapping)
         errata_with_package_counts.keep_if { |id| errata_with_package_counts[id] == errata_with_packages_in_library[id] }
         unless errata_with_package_counts.empty?
           partial_errata = self.errata.where("#{Katello::Erratum.table_name}.id NOT IN (?)", errata_with_package_counts.keys)
@@ -308,8 +313,8 @@ module Katello
       partial_errata
     end
 
-    def remove_partial_errata!
-      found = partial_errata.to_a
+    def remove_partial_errata!(repository_mapping = {})
+      found = partial_errata(repository_mapping).to_a
       yield(found) if block_given?
       self.repository_errata.where(:erratum_id => found.map(&:id)).delete_all
       found

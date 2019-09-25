@@ -8,7 +8,9 @@ module Actions
                       target_repo_id: target_repo.id,
                       class_name: units.first.class.name,
                       unit_ids: units.pluck(:id),
-                      resolve_dependencies: options[:resolve_dependencies])
+                      repository_mapping: options[:repository_mapping],
+                      resolve_dependencies: options[:resolve_dependencies],
+                      incremental: options[:incremental])
           end
         end
 
