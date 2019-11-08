@@ -129,6 +129,15 @@ module Katello
       assert_template 'api/v2/host_errata/index'
     end
 
+    def test_index_other_lifecycle_env
+      @default_content_view = katello_content_views(:acme_default)
+      @library = katello_environments(:library)
+      get :index, params: { :host_id => @host_dev.id, :content_view_id => @default_content_view.id, :lifecycle_environment_id => @library.id }
+
+      assert_response :success
+      assert_template 'api/v2/host_errata/index'
+    end
+
     def test_apply
       assert_async_task ::Actions::Katello::Host::Erratum::Install do |host, errata|
         host.id == @host.id && errata == %w(RHSA-1999-1231)

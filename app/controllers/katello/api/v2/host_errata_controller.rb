@@ -32,10 +32,12 @@ module Katello
     api :GET, "/hosts/:host_id/errata", N_("List errata available for the content host")
     param :host_id, :number, :desc => N_("UUID of the content host"), :required => true
     param :content_view_id, :number, :desc => N_("Calculate Applicable Errata based on a particular Content View"), :required => false
-    param :environment_id, :number, :desc => N_("Calculate Applicable Errata based on a particular Environment"), :required => false
+    param :lifecycle_environment_id, :number, :desc => N_("Calculate Applicable Errata based on a particular Environment"), :required => false
+    param :environment_id, :number, :desc => N_("Calculate Applicable Errata based on a particular Environment"), :required => false, :deprecated => true
     param_group :search, Api::V2::ApiController
     def index
-      if (params[:content_view_id] && params[:environment_id].nil?) || (params[:environment_id] && params[:content_view_id].nil?)
+      env_id = params[:environment_id] || params[:lifecycle_environment_id]
+      if (params[:content_view_id] && env_id.nil?) || (env_id && params[:content_view_id].nil?)
         fail _("Either both parameters 'content_view_id' and 'environment_id' should be specified or neither should be specified")
       end
 
@@ -120,7 +122,8 @@ module Katello
     end
 
     def find_environment
-      @environment = KTEnvironment.readable.find(params[:environment_id]) if params[:environment_id]
+      env_id = params[:lifecycle_environment_id] || params[:environment_id]
+      @environment = KTEnvironment.readable.find(env_id) if env_id
     end
 
     def find_host
