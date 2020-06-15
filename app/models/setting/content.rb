@@ -104,7 +104,7 @@ class Setting::Content < Setting
       self.set('pulp_docker_registry_port', N_("The port used by Pulp Crane to provide Docker Registries"),
                5000, N_('Pulp Docker registry port')),
       self.set('pulp_export_destination', N_("On-disk location for exported repositories"),
-               "/var/lib/pulp/katello-export", N_('Pulp export destination filepath')),
+               "/var/lib/pulp/exports", N_('Pulp export destination filepath')),
       self.set('pulp_client_key', N_("Path for ssl key used for pulp server auth"),
                "/etc/pki/katello/private/pulp-client.key", N_('Pulp client key')),
       self.set('pulp_client_cert', N_("Path for ssl cert used for pulp server auth"),
