@@ -2,35 +2,18 @@ module Actions
   module Katello
     module ContentViewVersion
       class Export < Actions::EntryAction
-        def plan(content_view_version, export_to_iso, since, iso_size)
-          # assemble data to feed to Pulp
-          content_view = ::Katello::ContentView.find(content_view_version.content_view_id)
-          org_label = ::Organization.find_by(:id => content_view.organization_id).label
-          group_id = "#{org_label}-#{content_view.label}-"\
-                     "v#{content_view_version.major}.#{content_view_version.minor}"
-          action_subject(content_view_version)
-
-          repos = content_view_version.archived_repos.select { |r| r.content_type == 'yum' }
-
-          history = ::Katello::ContentViewHistory.create!(:content_view_version => content_view_version,
-                                                          :user => ::User.current.login,
-                                                          :status => ::Katello::ContentViewHistory::IN_PROGRESS,
-                                                          :action => ::Katello::ContentViewHistory.actions[:export],
-                                                          :task => self.task)
-
-          plan_action(Katello::Repository::Export, repos, export_to_iso, since, iso_size,
-                                                   group_id)
-          plan_self(:history_id => history.id)
+        def plan(content_view_version)
+          unless File.directory?(Setting['pulp_export_destination'])
+            fail ::Foreman::Exception, N_("Unable to export, 'pulp_export_destination' setting is not set to a valid directory.")
+          end
+          plan_action(::Actions::Pulp3::ContentViewVersion::Export,
+                                 content_view_version,
+                                 SmartProxy.pulp_master!,
+                                 Setting['pulp_export_destination'])
         end
 
         def humanized_name
           _("Export")
-        end
-
-        def finalize
-          history = ::Katello::ContentViewHistory.find(input[:history_id])
-          history.status = ::Katello::ContentViewHistory::SUCCESSFUL
-          history.save!
         end
 
         def rescue_strategy

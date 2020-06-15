@@ -1,4 +1,5 @@
 module Katello
+  # rubocop:disable Metrics/ClassLength
   class ContentViewVersion < Katello::Model
     include Authorization::ContentViewVersion
     include ForemanTasks::Concerns::ActionSubject
@@ -182,6 +183,18 @@ module Katello
       else
         self.repositories.map(&:product).uniq(&:id)
       end
+    end
+
+    def exporter_name
+      name.gsub(/\s/, '_')
+    end
+
+    def generate_exporter_id
+      "#{organization.label}_#{exporter_name}"
+    end
+
+    def generate_exporter_path
+      "#{organization.label}/#{exporter_name}"
     end
 
     def repos_ordered_by_product(env)

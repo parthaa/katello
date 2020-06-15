@@ -237,6 +237,10 @@ module Katello
       self.content_view.default?
     end
 
+    def repository_reference
+      ::Katello::Pulp3::RepositoryReference.find_by(:root_repository_id => root_id, :content_view_id => content_view.id)
+    end
+
     def self.undisplayable_types
       ret = [::Katello::Repository::CANDLEPIN_DOCKER_TYPE]
 

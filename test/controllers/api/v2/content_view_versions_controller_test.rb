@@ -129,7 +129,7 @@ module Katello
     def test_export
       version = @library_dev_staging_view.versions.first
       @controller.expects(:async_task).with(::Actions::Katello::ContentViewVersion::Export,
-                                            version, false, nil, nil).returns({})
+                                            version).returns({})
       post :export, params: { :id => version.id }
       assert_response :success
     end
@@ -139,18 +139,6 @@ module Katello
       version = @library_dev_staging_view.versions.first
       post :export, params: { :id => version.id }
       assert_response :bad_request
-    end
-
-    def test_export_bad_date
-      version = @library_dev_staging_view.versions.first
-      post :export, params: { :id => version.id, :since => "a really bad date" }
-      assert_response 400
-    end
-
-    def test_export_size_sans_iso_param
-      version = @library_dev_staging_view.versions.first
-      post :export, params: { :id => version.id, :iso_mb_size => 5 }
-      assert_response 400
     end
 
     def test_export_protected
