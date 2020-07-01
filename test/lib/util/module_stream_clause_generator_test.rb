@@ -32,25 +32,25 @@ module Katello
 
       combined = {"_id" => {"$in" => [@module_stream1.pulp_id, @module_stream2.pulp_id]}}
 
-      clause_gen = setup_whitelist_filter([foo_rule, goo_rule])
+      clause_gen = setup_includes_filter([foo_rule, goo_rule])
       expected = combined
       assert_equal expected, clause_gen.copy_clause
       assert_nil clause_gen.remove_clause
 
-      blacklist_expected = combined
-      clause_gen = setup_blacklist_filter([foo_rule, goo_rule])
-      expected = {"$and" => [INCLUDE_ALL_MODULE_STREAMS, {"$nor" => [blacklist_expected]}]}
+      excludes_expected = combined
+      clause_gen = setup_excludes_filter([foo_rule, goo_rule])
+      expected = {"$and" => [INCLUDE_ALL_MODULE_STREAMS, {"$nor" => [excludes_expected]}]}
       assert_equal expected, clause_gen.copy_clause
-      assert_equal blacklist_expected, clause_gen.remove_clause
+      assert_equal excludes_expected, clause_gen.remove_clause
     end
 
     private
 
-    def setup_whitelist_filter(filter_rules, &block)
+    def setup_includes_filter(filter_rules, &block)
       setup_filter_clause(true, filter_rules, &block)
     end
 
-    def setup_blacklist_filter(filter_rules, &block)
+    def setup_excludes_filter(filter_rules, &block)
       setup_filter_clause(false, filter_rules, &block)
     end
 

@@ -9,11 +9,11 @@ module Katello
         ContentViewFilter.module_stream.or(ContentViewFilter.errata)
       end
 
-      def whitelist_non_matcher_clause
+      def includes_non_matcher_clause
         {"_id" => {"$not" => {"$exists" => true}}}
       end
 
-      def whitelist_all_matcher_clause
+      def includes_all_matcher_clause
         {"_id" => {"$exists" => true}}
       end
 

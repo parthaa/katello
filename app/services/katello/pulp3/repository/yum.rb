@@ -111,21 +111,21 @@ module Katello
 
           filters.flatten!.compact!
 
-          whitelist_ids = []
-          blacklist_ids = []
+          includes_ids = []
+          excludes_ids = []
           filters.each do |filter|
             if filter.inclusion
-              whitelist_ids += filter.content_unit_pulp_ids(source_repository)
+              includes_ids += filter.content_unit_pulp_ids(source_repository)
             else
-              blacklist_ids += filter.content_unit_pulp_ids(source_repository)
+              excludes_ids += filter.content_unit_pulp_ids(source_repository)
             end
           end
 
-          if whitelist_ids.empty? && filters.select { |filter| filter.inclusion }.empty?
-            whitelist_ids = source_repository.rpms.where(:modular => false).pluck(:pulp_id).sort
+          if includes_ids.empty? && filters.select { |filter| filter.inclusion }.empty?
+            includes_ids = source_repository.rpms.where(:modular => false).pluck(:pulp_id).sort
           end
 
-          content_unit_hrefs = whitelist_ids - blacklist_ids
+          content_unit_hrefs = includes_ids - excludes_ids
 
           if content_unit_hrefs.any?
             content_unit_hrefs += additional_content_hrefs(source_repository, content_unit_hrefs)

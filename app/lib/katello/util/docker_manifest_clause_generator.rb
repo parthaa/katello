@@ -16,11 +16,11 @@ module Katello
         end
       end
 
-      def whitelist_non_matcher_clause
+      def includes_non_matcher_clause
         {"name" => {"$not" => {"$exists" => true}}}
       end
 
-      def whitelist_all_matcher_clause
+      def includes_all_matcher_clause
         {"name" => {"$exists" => true}}
       end
 

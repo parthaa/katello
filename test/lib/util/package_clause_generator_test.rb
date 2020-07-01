@@ -35,16 +35,16 @@ module Katello
 
       combined = [{"filename" => {"$in" => [@rpm.filename, @rpm2.filename]}}]
 
-      clause_gen = setup_whitelist_filter([foo_rule, goo_rule])
+      clause_gen = setup_includes_filter([foo_rule, goo_rule])
       expected = prepend_modular("$or" => combined)
       assert_equal expected, clause_gen.copy_clause
       assert_nil clause_gen.remove_clause
 
-      blacklist_expected = {"$or" => combined}
-      clause_gen = setup_blacklist_filter([foo_rule, goo_rule])
-      expected = prepend_modular("$and" => [INCLUDE_ALL_PACKAGES, {"$nor" => [blacklist_expected]}])
+      excludes_expected = {"$or" => combined}
+      clause_gen = setup_excludes_filter([foo_rule, goo_rule])
+      expected = prepend_modular("$and" => [INCLUDE_ALL_PACKAGES, {"$nor" => [excludes_expected]}])
       assert_equal expected, clause_gen.copy_clause
-      assert_equal prepend_modular(blacklist_expected), clause_gen.remove_clause
+      assert_equal prepend_modular(excludes_expected), clause_gen.remove_clause
     end
 
     def test_package_versions
@@ -56,16 +56,16 @@ module Katello
 
       combined = [{"filename" => {"$in" => [@rpm.filename, @rpm2.filename]}}]
 
-      clause_gen = setup_whitelist_filter([foo_rule, goo_rule])
+      clause_gen = setup_includes_filter([foo_rule, goo_rule])
       expected = prepend_modular("$or" => combined)
       assert_equal deep_sort(expected), deep_sort(clause_gen.copy_clause)
       assert_nil clause_gen.remove_clause
 
-      blacklist_expected = {"$or" => combined}
-      clause_gen = setup_blacklist_filter([foo_rule, goo_rule])
-      expected = prepend_modular("$and" => [INCLUDE_ALL_PACKAGES, {"$nor" => [blacklist_expected]}])
+      excludes_expected = {"$or" => combined}
+      clause_gen = setup_excludes_filter([foo_rule, goo_rule])
+      expected = prepend_modular("$and" => [INCLUDE_ALL_PACKAGES, {"$nor" => [excludes_expected]}])
       assert_equal deep_sort(expected), deep_sort(clause_gen.copy_clause)
-      assert_equal deep_sort(prepend_modular(blacklist_expected)), deep_sort(clause_gen.remove_clause)
+      assert_equal deep_sort(prepend_modular(excludes_expected)), deep_sort(clause_gen.remove_clause)
     end
 
     def deep_sort(obj)
@@ -93,14 +93,14 @@ module Katello
       expected_group_clause = [{"_id" => {"$in" => expected_ids}}]
       returned_packages = {'names' => {"$in" => ["foo", "bar"]}}
 
-      clause_gen = setup_whitelist_filter([foo_rule, goo_rule]) do |gen|
+      clause_gen = setup_includes_filter([foo_rule, goo_rule]) do |gen|
         gen.expects(:package_clauses_for_group).once.
                     with(expected_group_clause).returns(returned_packages)
       end
       assert_equal prepend_modular(returned_packages), clause_gen.copy_clause
       assert_nil clause_gen.remove_clause
 
-      clause_gen = setup_blacklist_filter([foo_rule, goo_rule]) do |gen|
+      clause_gen = setup_excludes_filter([foo_rule, goo_rule]) do |gen|
         gen.expects(:package_clauses_for_group).once.
                     with(expected_group_clause).returns(returned_packages)
       end
@@ -185,7 +185,7 @@ module Katello
     def assert_errata_rules(rules, expected_errata_clauses)
       returned_packages = {'filenames' => {"$in" => ["foo", "bar"]}}
 
-      clause_gen = setup_whitelist_filter(rules) do |gen|
+      clause_gen = setup_includes_filter(rules) do |gen|
         gen.expects(:package_clauses_for_errata).once.
                     returns(returned_packages).with do |clauses|
                       clauses.map(&:to_sql).must_equal(expected_errata_clauses.map(&:to_sql))
@@ -194,7 +194,7 @@ module Katello
       assert_equal prepend_modular(returned_packages), clause_gen.copy_clause
       assert_nil clause_gen.remove_clause
 
-      clause_gen = setup_blacklist_filter(rules) do |gen|
+      clause_gen = setup_excludes_filter(rules) do |gen|
         gen.expects(:package_clauses_for_errata).once.
                     returns(returned_packages).with do |clauses|
                       clauses.map(&:to_sql).must_equal(expected_errata_clauses.map(&:to_sql))
@@ -220,11 +220,11 @@ module Katello
       end
     end
 
-    def setup_whitelist_filter(filter_rules, &block)
+    def setup_includes_filter(filter_rules, &block)
       setup_filter_clause(true, filter_rules, &block)
     end
 
-    def setup_blacklist_filter(filter_rules, &block)
+    def setup_excludes_filter(filter_rules, &block)
       setup_filter_clause(false, filter_rules, &block)
     end
 

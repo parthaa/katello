@@ -24,8 +24,8 @@ module Katello
                      :uniqueness => { :scope => :content_view_id }
     validates_with Validators::KatelloNameFormatValidator, :attributes => :name
 
-    scope :whitelist, -> { where(:inclusion => true) }
-    scope :blacklist, -> { where(:inclusion => false) }
+    scope :includes, -> { where(:inclusion => true) }
+    scope :excludes, -> { where(:inclusion => false) }
 
     scoped_search :on => :name, :complete_value => true
     scoped_search :on => :type, :rename => :content_type,

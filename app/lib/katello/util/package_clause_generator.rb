@@ -26,11 +26,11 @@ module Katello
         end
       end
 
-      def whitelist_non_matcher_clause
+      def includes_non_matcher_clause
         {"filename" => {"$not" => {"$exists" => true}}}
       end
 
-      def whitelist_all_matcher_clause
+      def includes_all_matcher_clause
         {"filename" => {"$exists" => true}}
       end
 
