@@ -23,16 +23,31 @@ module Katello
         ::Katello::Pulp3::Api::Core.new(@smart_proxy)
       end
 
+      def repository_hrefs
+        version_hrefs.map { |href| version_href_to_repository_href(href)  }
+      end
+
+      def version_hrefs
+        if @content_view_version.default?
+          @content_view_version.repositories.pluck(:version_href)
+        else
+          @content_view_version.archived_repos.pluck(:version_href)
+        end
+      end
+
+      def version_href_to_repository_href(version_href)
+        version_href.split("/")[0..-3].join("/") + "/"
+      end
+
       def create_exporter(export_base_dir: nil)
         export_base_dir ||= Setting['pulp_export_destination']
-        repository_hrefs = @content_view_version.repositories.map { |repo| repo.repository_reference[:repository_href] }
         api.exporter_api.create(name: "#{generate_exporter_id}-#{rand(9999)}",
                                 path: "#{export_base_dir}/#{generate_exporter_path}",
                                 repositories: repository_hrefs)
       end
 
       def create_export(exporter_href)
-        [api.export_api.create(exporter_href, {})]
+        [api.export_api.create(exporter_href, { versions: version_hrefs })]
       end
 
       def fetch_export(exporter_href)
