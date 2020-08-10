@@ -24,7 +24,7 @@ module Katello
       end
 
       def repository_hrefs
-        version_hrefs.map { |href| version_href_to_repository_href(href)  }
+        version_hrefs.map { |href| version_href_to_repository_href(href) }.uniq
       end
 
       def version_hrefs
