@@ -14,6 +14,10 @@ module Katello
         view_ids = ::Katello::ContentView.readable.collect { |v| v.id }
         joins(:content_view).where("#{Katello::ContentView.table_name}.id" => view_ids)
       end
+
+      def exportable
+        joins_authorized(Katello::ContentView, :export_content_views)
+      end
     end
   end
 end
