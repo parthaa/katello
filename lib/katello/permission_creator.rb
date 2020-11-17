@@ -154,7 +154,7 @@ module Katello
       @plugin.permission :export_content_views,
                          {
                            'katello/api/v2/content_view_versions' => [:export],
-                           'katello/api/v2/content_exports' => [:version, :histories, :api_status]
+                           'katello/api/v2/content_exports' => [:version, :index, :api_status]
                          },
                          :resource_type => 'Katello::ContentView',
                          :finder_scope => :exportable

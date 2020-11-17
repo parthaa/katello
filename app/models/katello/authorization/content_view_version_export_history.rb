@@ -4,7 +4,7 @@ module Katello
 
     module ClassMethods
       def readable
-        where(:content_view_version_id => Katello::ContentViewVersion.readable)
+        where("#{Katello::ContentViewVersionExportHistory.table_name}.content_view_version_id" => Katello::ContentViewVersion.readable)
       end
     end
   end

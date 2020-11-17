@@ -32,12 +32,12 @@ module Katello
       refute JSON.parse(@response.body)["api_usable"]
     end
 
-    def test_export_histories_protected
+    def test_index_protected
       allowed_perms = [@export_permission]
       denied_perms = [@create_permission, @update_permission, @destroy_permission]
 
-      assert_protected_action(:histories, allowed_perms, denied_perms) do
-        get :histories, params: { :content_view_id => @library_dev_staging_view.id }
+      assert_protected_action(:index, allowed_perms, denied_perms) do
+        get :index, params: { :content_view_id => @library_dev_staging_view.id }
       end
     end
 

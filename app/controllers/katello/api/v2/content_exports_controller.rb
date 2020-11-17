@@ -7,7 +7,7 @@ module Katello
     param :content_view_id, :number, :desc => N_("Content view identifier"), :required => false
     param :destination_server, String, :desc => N_("Destination Server name"), :required => false
     param :organization_id, :number, :desc => N_("Organization identifier"), :required => false
-    param :export_history_id, :number, :desc => N_("Content view version export history identifier"), :required => false
+    param :id, :number, :desc => N_("Content view version export history identifier"), :required => false
     param_group :search, Api::V2::ApiController
     add_scoped_search_description_for(ContentViewVersionExportHistory)
     def index
@@ -27,7 +27,7 @@ module Katello
       render json: { api_usable: SmartProxy.pulp_primary.pulp3_repository_type_support?(Katello::Repository::YUM_TYPE) }, status: :ok
     end
 
-    api :POST, "/content_exports/version", N_("Export a content view version.  Relevant only for Pulp 3 repositories")
+    api :POST, "/content_exports/version", N_("Performs a full-export of a content view version.  Relevant only for Pulp 3 repositories")
     param :id, :number, :desc => N_("Content view version identifier"), :required => true
     param :destination_server, String, :desc => N_("Destination Server name, required for Pulp3"), :required => true
     param :chunk_size_mb, :number, :desc => N_("Chunk export-tarfile into pieces of chunk_size mega bytes."), :required => false
