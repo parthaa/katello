@@ -373,7 +373,6 @@ Katello::Engine.routes.draw do
 
           api_resources :simple_content_access, only: [] do
             collection do
-              delete :destroy
               put :enable
               put :disable
               get :eligible

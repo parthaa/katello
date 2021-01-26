@@ -27,6 +27,12 @@ module Katello
             end
           end
 
+          def content_access
+            JSON.parse(self['content_access'].get).with_indifferent_access
+          rescue RestClient::NotFound
+            {}
+          end
+
           def get_all(uuids)
             consumers = []
             uuids.each_slice(GET_PARAM_BATCH_SIZE) do |slice|

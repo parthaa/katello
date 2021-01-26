@@ -1,7 +1,6 @@
 module Katello
   class Api::V2::SimpleContentAccessController < Api::V2::ApiController
     before_action :find_organization
-    before_action :check_upstream_connection
 
     resource_description do
       description "Red Hat subscriptions management platform."

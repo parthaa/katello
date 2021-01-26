@@ -31,6 +31,10 @@ module Katello
         Resources::Candlepin::Owner.update(self.label, :defaultServiceLevel => level)
       end
 
+      def content_access_mode=(level)
+        Resources::Candlepin::Owner.update(self.label, :defaultServiceLevel => level)
+      end
+
       def content_access_mode
         self.owner_details['contentAccessMode']
       end
