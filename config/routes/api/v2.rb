@@ -371,14 +371,24 @@ Katello::Engine.routes.draw do
             end
           end
 
+          api_resources :simple_content_access, only: [] do
+            collection do
+              delete :destroy
+              put :enable
+              put :disable
+              get :eligible
+              # get :ping
+              # match '/simple_content_access/enable', :to => 'upstream_subscriptions#enable_simple_content_access', :via => :put
+              # match '/simple_content_access/disable', :to => 'upstream_subscriptions#disable_simple_content_access', :via => :put
+              # match '/simple_content_access/eligible', :to => 'upstream_subscriptions#simple_content_access_eligible', :via => :get
+            end
+          end
+
           api_resources :upstream_subscriptions, only: [:index, :create] do
             collection do
               delete :destroy
               put :update
               get :ping
-              match '/simple_content_access/enable', :to => 'upstream_subscriptions#enable_simple_content_access', :via => :put
-              match '/simple_content_access/disable', :to => 'upstream_subscriptions#disable_simple_content_access', :via => :put
-              match '/simple_content_access/eligible', :to => 'upstream_subscriptions#simple_content_access_eligible', :via => :get
             end
           end
         end

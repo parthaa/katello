@@ -5,11 +5,11 @@ module Katello
     before_action :find_exportable_content_view_version, :only => [:version]
 
     api :GET, "/content_exports", N_("List export histories")
+    param :id, :number, :desc => N_("Content view version export history identifier"), :required => false
     param :content_view_version_id, :number, :desc => N_("Content view version identifier"), :required => false
     param :content_view_id, :number, :desc => N_("Content view identifier"), :required => false
     param :destination_server, String, :desc => N_("Destination Server name"), :required => false
     param :organization_id, :number, :desc => N_("Organization identifier"), :required => false
-    param :id, :number, :desc => N_("Content view version export history identifier"), :required => false
     param_group :search, Api::V2::ApiController
     add_scoped_search_description_for(ContentViewVersionExportHistory)
     def index
