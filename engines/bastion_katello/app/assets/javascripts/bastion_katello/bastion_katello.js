@@ -85,6 +85,9 @@
 //= require "bastion_katello/tasks/tasks.module.js"
 //= require_tree "./tasks"
 
+//= require "bastion_katello/product-contents/product-contents.module.js"
+//= require_tree "./product-contents"
+
 //= require "bastion_katello/content-credentials/content-credentials.module.js"
 //= require_tree "./content-credentials"
 
@@ -106,3 +109,4 @@
 
 //= require "bastion_katello/bastion-katello-bootstrap.js"
 //= require "bastion_katello/katello-features.run.js"
+

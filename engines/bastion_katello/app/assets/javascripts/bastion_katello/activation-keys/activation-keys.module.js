@@ -13,5 +13,6 @@ angular.module('Bastion.activation-keys', [
     'Bastion.utils',
     'Bastion.components',
     'Bastion.host-collections',
-    'Bastion.repository-sets'
+    'Bastion.repository-sets',
+    'Bastion.product-contents'
 ]);

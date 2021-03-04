@@ -1,5 +1,6 @@
 module Katello
   class ProductContent < Katello::Model
+    attr_accessor :overrides
     belongs_to :product, :class_name => 'Katello::Product', :foreign_key => 'product_id', :inverse_of => :product_contents
     belongs_to :content, :class_name => 'Katello::Content', :foreign_key => 'content_id', :inverse_of => :product_contents
 
@@ -18,6 +19,8 @@ module Katello
     scoped_search :on => :name, :relation => :content
     scoped_search :on => :content_type, :relation => :content
     scoped_search :on => :label, :relation => :content
+    scoped_search :on => :content_url, :relation => :content, :rename => :path
+    scoped_search :on => :enabled_by_default, :only_explicit => true
     scoped_search :on => :name, :relation => :product, :rename => :product_name
     scoped_search :on => :id, :relation => :product, :rename => :product_id, :only_explicit => true
     scoped_search :on => :label, :relation => :content, :rename => :content_label
@@ -37,6 +40,28 @@ module Katello
     # used by Katello::Api::V2::RepositorySetsController#index
     def repositories
       Katello::Repository.in_default_view.where(:root_id => product.root_repositories.has_url.where(:content_id => content.cp_content_id))
+    end
+
+    def override
+      return 'default' unless self.overrides
+      override = self.overrides.find { |pc| pc.content_label == content.label && pc.name == "enabled" }
+      override.nil? ? 'default' : override.value
+    end
+
+    def enabled_content_override
+      return unless self.overrides
+      overrides.find { |pc| pc.content_label == content.label && pc.name == "enabled" }
+    end
+
+    def content_overrides
+      return [] unless self.overrides
+      overrides.select { |pc| pc.content_label == content.label }
+    end
+
+    def legacy_content_override
+      return 'default' unless self.overrides
+      override = @overrides.find { |pc| pc.content_label == content.label && pc.name == "enabled" }
+      override.nil? ? 'default' : override.value
     end
   end
 end

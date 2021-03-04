@@ -14,10 +14,14 @@
 
             angular.forEach(productRepositorySets, function (productRepositorySet) {
                 var repositorySet = {
-                    'content_label': productRepositorySet.content.label,
                     name: overrideName,
                     value: overrideValue
                 };
+                if (productRepositorySet.content) {
+                    repositorySet['content_label'] = productRepositorySet.content.label;
+                } else {
+                    repositorySet['content_label'] = productRepositorySet.label;
+                }
 
                 if (remove) {
                     repositorySet.remove = true;

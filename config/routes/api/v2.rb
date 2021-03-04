@@ -33,7 +33,7 @@ Katello::Engine.routes.draw do
         api_resources :activation_keys, :only => [:index, :create, :show, :update, :destroy] do
           get :auto_complete_search, :on => :collection
           member do
-            match '/product_content' => 'activation_keys#product_content', :via => :get
+            match '/product_content' => 'repository_sets#index', :via => :get
             match '/content_override' => 'activation_keys#content_override', :via => :put
             post :copy
             put :add_subscriptions
@@ -52,6 +52,10 @@ Katello::Engine.routes.draw do
               match '/available' => 'subscriptions#available', :via => :get
             end
           end
+        end
+
+        api_resources :product_contents, :only => [:index] do
+          get :auto_complete_search, :on => :collection
         end
 
         api_resources :content_credentials, :only => [:index, :show, :create, :update, :destroy] do
