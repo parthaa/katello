@@ -7,6 +7,15 @@ module Katello
     def models
       @organization = get_organization
       @product = katello_products(:redhat)
+      @activation_key = ActivationKey.find(katello_activation_keys(:simple_key).id)
+      setup_activation_key_models
+    end
+
+    def setup_activation_key_models
+      ActivationKey.any_instance.stubs(:valid_content_override_label?).returns(true)
+      ActivationKey.any_instance.stubs(:content_overrides).returns([])
+      ActivationKey.any_instance.stubs(:products).returns(Product.where(id: @product.id))
+      ActivationKey.any_instance.stubs(:all_products).returns(Product.where(id: @product.id))
     end
 
     def permissions
@@ -99,6 +108,39 @@ module Katello
 
       assert_empty body['error']
       assert_response :success
+    end
+
+    def test_index_protected_product
+      allowed_perms = [:view_products]
+      assert_protected_action(:index, allowed_perms, []) do
+        get(:index, params: { :product_id => @product.id })
+      end
+    end
+
+    def test_index_protected_activation_keys
+      allowed_perms = [:view_activation_keys]
+
+      assert_protected_action(:index, allowed_perms, []) do
+        get(:index, params: { :activation_key_id => @activation_key.id })
+      end
+    end
+
+    def test_index_activation_keys
+      response = get :index, params: { :activation_key_id => @activation_key.id }
+
+      refute_empty JSON.parse(response.body)['results']
+      assert_response :success
+      assert_template 'katello/api/v2/repository_sets/index'
+    end
+
+    def test_product_content_access_modes_activation_keys
+      ProductContentFinder.any_instance.expects(:product_content).once.returns(ProductContent.none)
+
+      mode_all = true
+      mode_env = false
+      get(:index, params: { :activation_key_id => @activation_key.id, :content_access_mode_all => mode_all, :content_access_mode_env => mode_env })
+      assert_response :success
+      assert_template 'katello/api/v2/repository_sets/index'
     end
 
     def test_available_repositories

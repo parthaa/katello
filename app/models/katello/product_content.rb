@@ -18,6 +18,8 @@ module Katello
     scoped_search :on => :name, :relation => :content
     scoped_search :on => :content_type, :relation => :content
     scoped_search :on => :label, :relation => :content
+    scoped_search :on => :content_url, :relation => :content, :rename => :path
+    scoped_search :on => :enabled, :rename => :enabled_by_default, :only_explicit => true
     scoped_search :on => :name, :relation => :product, :rename => :product_name
     scoped_search :on => :id, :relation => :product, :rename => :product_id, :only_explicit => true
     scoped_search :on => :label, :relation => :content, :rename => :content_label
