@@ -30,6 +30,10 @@ module Katello
       consumable.organization.enabled_product_content_for(roots)
     end
 
+    def self.wrap_with_overrides(product_contents:, overrides:)
+      product_contents.map { |pc| ProductContentPresenter.new(pc, overrides) }
+    end
+
     def presenter_with_overrides(overrides)
       product_content.map { |pc| ProductContentPresenter.new(pc, overrides) }
     end
