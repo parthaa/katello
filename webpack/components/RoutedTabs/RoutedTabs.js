@@ -11,16 +11,15 @@ import paramsFromHash from '../../utils/paramsFromHash';
   Influenced by https://github.com/ansible/awx/blob/devel/awx/ui_next/src/components/RoutedTabs/RoutedTabs.jsx
 */
 const RoutedTabs = ({
-  tabs, baseUrl, defaultTabIndex, titleComponent,
+  tabs, baseUrl, defaultTabIndex, titleComponent, isSecondary,
 }) => {
   const history = useHistory();
   const { hash } = useLocation();
   const { hash: tabFromUrl, params: { subContentId } } = paramsFromHash(hash);
-
+ // debugger
   const buildLink = tabKey => `${baseUrl}#${tabKey}`;
 
   const changeTab = (eventKey) => {
-    debugger
     const matchedTab = tabs.find(tab => tab.key === eventKey);
     if (matchedTab) {
       history.push(buildLink(matchedTab.key));
@@ -61,6 +60,7 @@ const RoutedTabs = ({
             aria-label={title}
             eventKey={key}
             key={key}
+            isSecondary
             title={titleComponent || <TabTitleText>{title}</TabTitleText>}
           >
             <div className="tab-body-with-spacing">

@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import RoutedTabs from '../../../../components/RoutedTabs';
 import EmptyPage from 'foremanReact/components/common/EmptyState/EmptyStatePattern';
 import { selectRouterLocation, selectRouterHash, selectRouterPath } from 'foremanReact/routes/RouterSelector';
 import { useSelector } from 'react-redux';
 import {  useParams } from "react-router-dom";
+import { Tabs, Tab, TabTitleText} from '@patternfly/react-core';
+
 
 const ContentTab = () => {
-  let { id } = useParams();
-
+  const [activeTab, setActiveTab] = useState('Content');
   const tabs = [
     {
       key: 'packages',
@@ -37,7 +38,27 @@ const ContentTab = () => {
                 />,
     },
   ];
-  return (<RoutedTabs tabs={tabs} baseUrl={`/experimental/hosts/${id}/content`} defaultTabIndex={0} />)
+
+  const handleTabClick = (event, tabIndex) => {
+    setActiveTab(tabIndex);
+  };
+
+  useEffect(() => {
+    setActiveTab(tabs[0].key)
+  }, []);
+
+  return  (<Tabs isSecondary
+            activeKey={activeTab}
+            onSelect={handleTabClick}>
+
+          { tabs.map(tab => (
+              <Tab eventKey={tab.key} title={<TabTitleText>{tab.title}</TabTitleText>}>
+                {tab.content}
+              </Tab>
+            ))
+          }
+        </Tabs>
+        )
 };
 
 export default ContentTab;
