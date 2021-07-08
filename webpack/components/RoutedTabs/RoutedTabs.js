@@ -20,6 +20,7 @@ const RoutedTabs = ({
   const buildLink = tabKey => `${baseUrl}#${tabKey}`;
 
   const changeTab = (eventKey) => {
+    debugger
     const matchedTab = tabs.find(tab => tab.key === eventKey);
     if (matchedTab) {
       history.push(buildLink(matchedTab.key));

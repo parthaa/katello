@@ -12,5 +12,5 @@ registerReducer('katelloExtends', extendReducer);
 
 addGlobalFill('aboutFooterSlot', '[katello]AboutSystemStatuses', <SystemStatuses key="katello-system-statuses" />, 100);
 addGlobalFill('registrationAdvanced', '[katello]RegistrationCommands', <RegistrationCommands key="katello-reg" />, 100);
-addGlobalFill('host-details-page-tabs', 'Content', <ContentTab key="content-tab" />, 100);
-addGlobalFill('host-details-page-tabs', 'Subscription', <SubscriptionTab key="subscription-tab" />, 100);
+addGlobalFill('host-details-page-tabs', 'Content', <ContentTab key="content" />, 100);
+addGlobalFill('host-details-page-tabs', 'Subscription', <SubscriptionTab key="subscription" />, 100);
