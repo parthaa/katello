@@ -7,6 +7,7 @@ import { useDispatch } from 'react-redux';
 import { STATUS } from 'foremanReact/constants';
 import { useForemanSettings } from 'foremanReact/Root/Context/ForemanContext';
 import { usePaginationOptions } from 'foremanReact/components/Pagination/PaginationHooks';
+import { translate as __ } from 'foremanReact/common/I18n';
 
 import MainTable from './MainTable';
 import Search from '../../components/Search';
@@ -24,6 +25,7 @@ const TableWrapper = ({
   updateSearchQuery,
   additionalListeners,
   activeFilters,
+  emptySearchBody,
   ...allTableProps
 }) => {
   const dispatch = useDispatch();
@@ -32,7 +34,6 @@ const TableWrapper = ({
   const [perPage, setPerPage] = useState(Number(metadata?.per_page ?? foremanPerPage));
   const [page, setPage] = useState(Number(metadata?.page ?? 1));
   const [total, setTotal] = useState(Number(metadata?.subtotal ?? 0));
-
 
   const updatePagination = (data) => {
     const { subtotal: newTotal, page: newPage, per_page: newPerPage } = data;
@@ -122,6 +123,7 @@ const TableWrapper = ({
         searchIsActive={!!searchQuery}
         activeFilters={activeFilters}
         rowsCount={rowsCount}
+        emptySearchBody={emptySearchBody}
         {...allTableProps}
       >
         {children}
@@ -136,6 +138,7 @@ const TableWrapper = ({
 TableWrapper.propTypes = {
   searchQuery: PropTypes.string.isRequired,
   updateSearchQuery: PropTypes.func.isRequired,
+  emptySearchBody: PropTypes.string,
   fetchItems: PropTypes.func.isRequired,
   metadata: PropTypes.shape({
     total: PropTypes.number,
@@ -173,6 +176,7 @@ TableWrapper.defaultProps = {
   activeFilters: false,
   foremanApiAutoComplete: false,
   actionButtons: null,
+  emptySearchBody: __('Try changing your search settings.'),
 };
 
 export default TableWrapper;
