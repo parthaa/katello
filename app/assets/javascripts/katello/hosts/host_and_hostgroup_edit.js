@@ -4,7 +4,7 @@ KT.hosts = {};
 $(document).on('ContentLoad', function(){
     KT.hosts.onKatelloHostEditLoad();
     window.tfm.hosts.registerPluginAttributes("os",
-         ['lifecycle_environment_id', 'content_view_id', 'environment_id', 'content_source_id', 'architecture_id']);
+         ['lifecycle_environment_id', 'content_view_id', 'environment_id', 'content_source_id', 'architecture_id', 'parent_id']);
 
     $("#hostgroup_lifecycle_environment_id").change(KT.hosts.environmentChanged);
     $("#host_lifecycle_environment_id").change(KT.hosts.environmentChanged);
