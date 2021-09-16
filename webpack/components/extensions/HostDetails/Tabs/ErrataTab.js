@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Hint, HintBody } from '@patternfly/react-core';
+import { Button, Hint, HintBody, Skeleton } from '@patternfly/react-core';
 import { TableVariant, TableText, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { translate as __ } from 'foremanReact/common/I18n';
 import { selectAPIResponse } from 'foremanReact/redux/API/APISelectors';
-
+import { SelectAllManager, useSet} from '../../../Table/TableHooks';
 import IsoDate from 'foremanReact/components/common/dates/IsoDate';
 import { urlBuilder } from 'foremanReact/common/urlHelpers';
 import TableWrapper from '../../../../components/Table/TableWrapper';
+import TdSelect from '../../../../components/SelectAllCheckbox/TdSelect';
+
 import { ErrataType, ErrataSeverity } from '../../../../components/Errata';
 import { getInstallableErrata } from '../HostErrata/HostErrataActions';
 import { selectHostErrataStatus } from '../HostErrata/HostErrataSelectors';
@@ -17,10 +19,10 @@ import './ErrataTab.scss';
 export const ErrataTab = () => {
   const hostDetails = useSelector(state => selectAPIResponse(state, 'HOST_DETAILS'));
   const { id: hostId } = hostDetails;
+
   const actionButtons = <Button isDisabled> {__('Apply')} </Button>;
 
   const [searchQuery, updateSearchQuery] = useState('');
-
   const emptyContentTitle = __('This host does not have any installable errata.');
   const emptyContentBody = __('Installable errata will appear here when available.');
   const emptySearchTitle = __('No matching installable errata found');
@@ -41,6 +43,11 @@ export const ErrataTab = () => {
   const response = useSelector(state => selectAPIResponse(state, HOST_ERRATA_KEY));
   const { results, ...metadata } = response;
   const status = useSelector(state => selectHostErrataStatus(state));
+
+  const selectAll = new SelectAllManager(results, metadata, useSet([]))
+
+  if (!hostId) return <Skeleton />;
+
   const rowActions = [
     {
       title: __('Apply via Katello agent'), disabled: true,
@@ -77,22 +84,25 @@ export const ErrataTab = () => {
                 actionButtons,
                 searchQuery,
                 updateSearchQuery,
+                selectAll,
                 }}
           additionalListeners={[hostId]}
           fetchItems={fetchItems}
           autocompleteEndpoint={`/hosts/${hostId}/errata/auto_complete_search`}
           foremanApiAutoComplete
+          rowsCount={results?.length}
           variant={TableVariant.compact}
         >
           <Thead>
             <Tr>
+              <Th />
               {columnHeaders.map(col =>
                 <Th key={col}>{col}</Th>)}
               <Th />
             </Tr>
           </Thead>
           <Tbody>
-            {results?.map((erratum) => {
+            {results?.map((erratum, rowIndex) => {
                 const {
                   id,
                   errata_id: errataId,
@@ -102,6 +112,7 @@ export const ErrataTab = () => {
                 } = erratum;
                 return (
                   <Tr key={`${id}_${createdAt}`}>
+                    <TdSelect id = {id} rowIndex = {rowIndex} selectAll = {selectAll} />
                     <Td>
                       <a href={urlBuilder(`errata/${id}`, '')}>{errataId}</a>
                     </Td>

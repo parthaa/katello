@@ -1,5 +1,42 @@
 import { useState, useRef } from 'react';
 
+export class SelectAllManager {
+  constructor(results, metadata, selectionSet) {
+    this.results = results;
+    this.metadata = metadata;
+    this.selectionSet = selectionSet;
+  }
+
+  resultIds = () =>
+     this.results?.map(result => result.id) ?? [];
+
+  areAllRowsOnPageSelected = () => {
+    const ids = this.resultIds();
+    return Number(ids?.length) > 0 && ids.every(result => this.selectionSet.has(result));
+  }
+
+  areAllRowsSelected = () =>
+     Number(this.selectionSet.size) > 0 && this.selectionSet.size === Number(this.metadata.total);
+
+
+  selectPage = () =>
+    this.resultIds().forEach(id => this.selectionSet.add(id));
+
+  selectNone = () =>
+    this.selectionSet.clear();
+
+  onRowSelect = (isSelected, id) => {
+    if (isSelected) {
+      this.selectionSet.add(id);
+    } else {
+      this.selectionSet.delete(id);
+    }
+  };
+  clear = () => this.selectionSet.clear()
+  selectedCount = () => this.selectionSet.size
+  isSelected = (id) => this.selectionSet.has(id)
+}
+
 class ReactConnectedSet extends Set {
   constructor(initialValue, forceRender) {
     super();
@@ -35,12 +72,10 @@ class ReactConnectedSet extends Set {
   }
 }
 
-const useSet = (initialArry) => {
+export const useSet = (initialArry) => {
   const [, setToggle] = useState(false);
   // needed because mutating a Ref won't cause React to rerender
   const forceRender = () => setToggle(prev => !prev);
   const set = useRef(new ReactConnectedSet(initialArry, forceRender));
   return set.current;
 };
-
-export default useSet;

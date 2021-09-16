@@ -5,14 +5,15 @@ import { TableVariant, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table'
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAPIResponse } from 'foremanReact/redux/API/APISelectors';
 import TableWrapper from '../../../Table/TableWrapper';
-import useSet from '../../../Table/TableHooks';
+import { SelectAllManager, useSet } from '../../../Table/TableHooks';
 import { getHostTraces, resolveHostTraces } from './HostTracesActions';
 import { selectHostTracesStatus } from './HostTracesSelectors';
+import TdSelect from '../../../../components/SelectAllCheckbox/TdSelect';
+
 import './TracesTab.scss';
 
 const TracesTab = () => {
   const [searchQuery, updateSearchQuery] = useState('');
-  const selectedTraces = useSet([]);
   const hostDetails = useSelector(state => selectAPIResponse(state, 'HOST_DETAILS'));
   const dispatch = useDispatch();
   const { id: hostId } = hostDetails;
@@ -27,43 +28,24 @@ const TracesTab = () => {
   );
   const response = useSelector(state => selectAPIResponse(state, 'HOST_TRACES'));
   const { results, ...meta } = response;
+  const selectAll = new SelectAllManager(results, meta, useSet([]))
+
   const onRestartApp = () => {
-    dispatch(resolveHostTraces(hostId, { trace_ids: [...selectedTraces] }));
-    selectedTraces.clear();
+    dispatch(resolveHostTraces(hostId, { trace_ids: [...selectAll.selectionSet] }));
+    selectAll.clear();
     const params = { page: meta.page, per_page: meta.per_page, search: meta.search };
     dispatch(getHostTraces(hostId, params));
   };
   const actionButtons = (
     <Button
       variant="secondary"
-      isDisabled={!selectedTraces.size}
+      isDisabled={!selectAll.selectionSet.size}
       onClick={onRestartApp}
     >
       {__('Restart app')}
     </Button>
   );
   const status = useSelector(state => selectHostTracesStatus(state));
-  const resultIds = results?.map(result => result.id) ?? [];
-  const areAllRowsOnPageSelected = () =>
-    Number(resultIds?.length) > 0 && resultIds.every(result => selectedTraces.has(result));
-  const areAllRowsSelected = () =>
-    Number(selectedTraces.size) > 0 && selectedTraces.size === Number(meta.total);
-  const selectPage = () => {
-    [...results.map(result => result.id)].forEach(id => selectedTraces.add(id));
-  };
-  const selectNone = () => {
-    selectedTraces.clear();
-  };
-  // const selectAll = () => {
-  //   // leaving blank until we can implement selectAll Katello-wide
-  // };
-  const onRowSelect = ({ isSelected, traceId }) => {
-    if (isSelected) {
-      selectedTraces.add(traceId);
-    } else {
-      selectedTraces.delete(traceId);
-    }
-  };
   if (!hostId) return <Skeleton />;
 
   /* eslint-disable max-len */
@@ -81,16 +63,11 @@ const TracesTab = () => {
         fetchItems={fetchItems}
         autocompleteEndpoint={`/hosts/${hostId}/traces/auto_complete_search`}
         foremanApiAutoComplete
-        displaySelectAllCheckbox
-        selectPage={selectPage}
-        selectNone={selectNone}
+        selectAll={selectAll]}
         rowsCount={results?.length}
-        areAllRowsOnPageSelected={areAllRowsOnPageSelected}
-        areAllRowsSelected={areAllRowsSelected}
         variant={TableVariant.compact}
         status={status}
         metadata={meta}
-        selectedCount={selectedTraces.size}
       >
         <Thead>
           <Tr>
@@ -110,16 +87,10 @@ const TracesTab = () => {
           } = result;
           return (
             <Tr key={id} >
-              <Td select={{
-                disable: false,
-                props: {
-                  'aria-label': `check-${application}`,
-                },
-                isSelected: selectedTraces.has(id),
-                onSelect: (event, isSelected) => onRowSelect({ isSelected, traceId: id }),
-                rowIndex,
-                variant: 'checkbox',
-              }}
+              <TdSelect id = {id}
+                        selectAll = {selectAll}
+                        rowIndex = {rowIndex}
+                        props={{'aria-label': `check-${application}`}},
               />
               <Td>{application}</Td>
               <Td>{appType}</Td>

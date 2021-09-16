@@ -14,6 +14,7 @@ import { getPageStats } from './helpers';
 import Search from '../../components/Search';
 import SelectAllCheckbox from '../SelectAllCheckbox';
 import { orgId } from '../../services/api';
+import { SelectAllManager } from './TableHooks';
 
 /* Patternfly 4 table wrapper */
 const TableWrapper = ({
@@ -27,13 +28,7 @@ const TableWrapper = ({
   updateSearchQuery,
   additionalListeners,
   activeFilters,
-  displaySelectAllCheckbox,
   selectAll,
-  selectNone,
-  selectPage,
-  areAllRowsSelected,
-  areAllRowsOnPageSelected,
-  selectedCount,
   emptySearchBody,
   ...allTableProps
 }) => {
@@ -135,17 +130,12 @@ const TableWrapper = ({
   return (
     <>
       <Flex>
-        {displaySelectAllCheckbox &&
+        {selectAll &&
           <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
             <SelectAllCheckbox
               selectAll={selectAll}
-              selectNone={selectNone}
-              selectPage={selectPage}
-              selectedCount={selectedCount}
               pageRowCount={pageRowCount}
               totalCount={totalCount}
-              areAllRowsSelected={areAllRowsSelected()}
-              areAllRowsOnPageSelected={areAllRowsOnPageSelected()}
             />
           </FlexItem>
         }
@@ -222,13 +212,7 @@ TableWrapper.propTypes = {
     PropTypes.bool,
   ])),
   activeFilters: PropTypes.bool,
-  displaySelectAllCheckbox: PropTypes.bool,
-  selectedCount: PropTypes.number,
-  selectAll: PropTypes.func,
-  selectNone: PropTypes.func,
-  selectPage: PropTypes.func,
-  areAllRowsSelected: PropTypes.func,
-  areAllRowsOnPageSelected: PropTypes.func,
+  selectAll: PropTypes.instanceOf(SelectAllManager),
   emptySearchBody: PropTypes.string,
 };
 
@@ -239,13 +223,7 @@ TableWrapper.defaultProps = {
   activeFilters: false,
   foremanApiAutoComplete: false,
   actionButtons: null,
-  displaySelectAllCheckbox: false,
-  selectedCount: 0,
-  selectAll: noop,
-  selectNone: noop,
-  selectPage: noop,
-  areAllRowsSelected: noop,
-  areAllRowsOnPageSelected: noop,
+  selectAll: null,
   emptySearchBody: __('Try changing your search settings.'),
 };
 
