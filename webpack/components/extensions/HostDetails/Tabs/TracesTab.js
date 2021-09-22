@@ -5,14 +5,13 @@ import { TableVariant, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table'
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAPIResponse } from 'foremanReact/redux/API/APISelectors';
 import TableWrapper from '../../../Table/TableWrapper';
-import useSet from '../../../Table/TableHooks';
+import { useSelectionSet } from '../../../Table/TableHooks';
 import { getHostTraces, resolveHostTraces } from './HostTracesActions';
 import { selectHostTracesStatus } from './HostTracesSelectors';
 import './TracesTab.scss';
 
 const TracesTab = () => {
   const [searchQuery, updateSearchQuery] = useState('');
-  const selectedTraces = useSet([]);
   const hostDetails = useSelector(state => selectAPIResponse(state, 'HOST_DETAILS'));
   const dispatch = useDispatch();
   const { id: hostId } = hostDetails;
@@ -27,6 +26,10 @@ const TracesTab = () => {
   );
   const response = useSelector(state => selectAPIResponse(state, 'HOST_TRACES'));
   const { results, ...meta } = response;
+  const {
+    onRowSelect, isSelected, selectionSet: selectedTraces, ...selectAll
+  } = useSelectionSet(results, meta);
+
   const onRestartApp = () => {
     dispatch(resolveHostTraces(hostId, { trace_ids: [...selectedTraces] }));
     selectedTraces.clear();
@@ -43,27 +46,9 @@ const TracesTab = () => {
     </Button>
   );
   const status = useSelector(state => selectHostTracesStatus(state));
-  const resultIds = results?.map(result => result.id) ?? [];
-  const areAllRowsOnPageSelected = () =>
-    Number(resultIds?.length) > 0 && resultIds.every(result => selectedTraces.has(result));
-  const areAllRowsSelected = () =>
-    Number(selectedTraces.size) > 0 && selectedTraces.size === Number(meta.total);
-  const selectPage = () => {
-    [...results.map(result => result.id)].forEach(id => selectedTraces.add(id));
-  };
-  const selectNone = () => {
-    selectedTraces.clear();
-  };
   // const selectAll = () => {
   //   // leaving blank until we can implement selectAll Katello-wide
   // };
-  const onRowSelect = ({ isSelected, traceId }) => {
-    if (isSelected) {
-      selectedTraces.add(traceId);
-    } else {
-      selectedTraces.delete(traceId);
-    }
-  };
   if (!hostId) return <Skeleton />;
 
   /* eslint-disable max-len */
@@ -82,15 +67,11 @@ const TracesTab = () => {
         autocompleteEndpoint={`/hosts/${hostId}/traces/auto_complete_search`}
         foremanApiAutoComplete
         displaySelectAllCheckbox
-        selectPage={selectPage}
-        selectNone={selectNone}
         rowsCount={results?.length}
-        areAllRowsOnPageSelected={areAllRowsOnPageSelected}
-        areAllRowsSelected={areAllRowsSelected}
         variant={TableVariant.compact}
         status={status}
         metadata={meta}
-        selectedCount={selectedTraces.size}
+        {...selectAll}
       >
         <Thead>
           <Tr>
@@ -115,8 +96,8 @@ const TracesTab = () => {
                 props: {
                   'aria-label': `check-${application}`,
                 },
-                isSelected: selectedTraces.has(id),
-                onSelect: (event, isSelected) => onRowSelect({ isSelected, traceId: id }),
+                isSelected: isSelected(id),
+                onSelect: (event, selected) => onRowSelect(selected, id),
                 rowIndex,
                 variant: 'checkbox',
               }}

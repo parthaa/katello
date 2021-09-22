@@ -28,10 +28,10 @@ const TableWrapper = ({
   additionalListeners,
   activeFilters,
   displaySelectAllCheckbox,
-  selectAll,
+  isSelectAllChecked,
+  setSelectAllChecked,
   selectNone,
   selectPage,
-  areAllRowsSelected,
   areAllRowsOnPageSelected,
   selectedCount,
   emptySearchBody,
@@ -44,7 +44,6 @@ const TableWrapper = ({
   const page = Number(metadata?.page ?? 1);
   const total = Number(metadata?.subtotal ?? 0);
   const { pageRowCount } = getPageStats({ total, page, perPage });
-  const totalCount = metadata?.total ?? 0;
   const unresolvedStatus = !!allTableProps?.status && allTableProps.status !== STATUS.RESOLVED;
   const unresolvedStatusOrNoRows = unresolvedStatus || pageRowCount === 0;
   const searchNotUnderway = !(searchQuery || activeFilters);
@@ -143,13 +142,16 @@ const TableWrapper = ({
         {displaySelectAllCheckbox &&
           <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
             <SelectAllCheckbox
-              selectAll={selectAll}
-              selectNone={selectNone}
-              selectPage={selectPage}
-              selectedCount={selectedCount}
-              pageRowCount={pageRowCount}
-              totalCount={totalCount}
-              areAllRowsSelected={areAllRowsSelected()}
+              {...{
+                      isSelectAllChecked,
+                      setSelectAllChecked,
+                      selectPage,
+                      selectNone,
+                      selectedCount,
+                      pageRowCount,
+                    }
+                }
+              totalCount={total}
               areAllRowsOnPageSelected={areAllRowsOnPageSelected()}
             />
           </FlexItem>
@@ -166,7 +168,7 @@ const TableWrapper = ({
           </FlexItem>
         }
         {showActionButtons &&
-          <FlexItem>
+          <FlexItem style={{ marginLeft: '16px' }}>
             {actionButtons}
           </FlexItem>}
         {showPagination &&
@@ -236,10 +238,10 @@ TableWrapper.propTypes = {
   activeFilters: PropTypes.bool,
   displaySelectAllCheckbox: PropTypes.bool,
   selectedCount: PropTypes.number,
-  selectAll: PropTypes.func,
+  setSelectAllChecked: PropTypes.func,
+  isSelectAllChecked: PropTypes.bool,
   selectNone: PropTypes.func,
   selectPage: PropTypes.func,
-  areAllRowsSelected: PropTypes.func,
   areAllRowsOnPageSelected: PropTypes.func,
   emptySearchBody: PropTypes.string,
   disableSearch: PropTypes.bool,
@@ -254,10 +256,10 @@ TableWrapper.defaultProps = {
   actionButtons: null,
   displaySelectAllCheckbox: false,
   selectedCount: 0,
-  selectAll: noop,
+  isSelectAllChecked: null,
+  setSelectAllChecked: noop,
   selectNone: noop,
   selectPage: noop,
-  areAllRowsSelected: noop,
   areAllRowsOnPageSelected: noop,
   emptySearchBody: __('Try changing your search settings.'),
   disableSearch: false,

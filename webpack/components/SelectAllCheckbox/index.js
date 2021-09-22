@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Dropdown, DropdownToggle, DropdownToggleCheckbox,
   DropdownItem } from '@patternfly/react-core';
 import { translate as __ } from 'foremanReact/common/I18n';
+import { noop } from 'foremanReact/common/helpers';
 
 import './SelectAllCheckbox.scss';
 
@@ -12,64 +13,82 @@ const SelectAllCheckbox = ({
   selectPage,
   selectedCount,
   pageRowCount,
-  // totalCount,
+  totalCount,
   areAllRowsOnPageSelected,
-  areAllRowsSelected,
+  setSelectAllChecked,
+  isSelectAllChecked,
 }) => {
-  const [isSelectAllChecked, setSelectAllChecked] = useState(null);
   const [isSelectAllDropdownOpen, setSelectAllDropdownOpen] = useState(false);
+  const [selectionState, setSelectionState] = useState('none');
+  const [selectionToggle, setSelectionToggle] = useState(false);
 
-  // Checkbox states: false = unchecked, null = partially-checked, true = checked
-  // Flow: All are selected -> click -> none are selected
-  // Some are selected -> click -> none are selected
-  // None are selected -> click -> page is selected
-  const onSelectAllCheckboxChange = () => {
-    if (isSelectAllChecked === false) {
-      return selectPage();
+  const onSelectAllCheckboxChange = (checked) => {
+    setSelectionToggle(checked);
+    if (checked) {
+      if (selectionState === 'page') {
+        return selectPage();
+      }
+      return setSelectAllChecked(true);
     }
     return selectNone();
   };
   const onSelectAllDropdownToggle = () => setSelectAllDropdownOpen(isOpen => !isOpen);
 
-  // TODO: uncomment when Select All is implemented in Katello API
-  // const handleSelectAll = () => {
-  //   setSelectAllDropdownOpen(false);
-  //   selectAll();
-  // };
+  const handleSelectAll = () => {
+    setSelectAllDropdownOpen(false);
+    setSelectionToggle(true);
+    setSelectAllChecked(true);
+  };
   const handleSelectPage = () => {
     setSelectAllDropdownOpen(false);
+    setSelectionToggle(true);
     selectPage();
   };
   const handleSelectNone = () => {
     setSelectAllDropdownOpen(false);
+    setSelectionToggle(false);
     selectNone();
   };
 
-  useEffect(() => {
-    let newCheckedState;
-    if (selectedCount === 0) {
-      newCheckedState = false;
-    } else if (selectedCount > 0) {
-      newCheckedState = null; // null is partially-checked state
-    } else if (areAllRowsSelected) {
-      newCheckedState = true;
+  const onSelect = (event) => {
+    const { id } = event.currentTarget;
+    if (id) {
+      setSelectionState(id);
     }
-    setSelectAllChecked(newCheckedState);
-  }, [selectedCount, areAllRowsSelected]);
+  };
 
-  // TODO: add the following to selectAllDropdownItems when Select All is implemented
-  // <DropdownItem key="select-all" component="button" isDisabled onClick={handleSelectAll}>
-  //   {`${__('Select all')} (${totalCount})`}
-  // </DropdownItem>,
+  useEffect(() => {
+    let checkedState = null;
+    if (selectedCount === 0) {
+      checkedState = false;
+    } else if (selectedCount !== totalCount) {
+      if (selectionState === 'page' && areAllRowsOnPageSelected) {
+        checkedState = true;
+      }
+    } else {
+      checkedState = true;
+    }
+
+    setSelectionToggle(checkedState);
+  }, [selectedCount, totalCount, selectionState, areAllRowsOnPageSelected]);
+
 
   const selectAllDropdownItems = [
-    <DropdownItem key="select-none" component="button" onClick={handleSelectNone}>
+    <DropdownItem key="select-none" id="none" component="button" onClick={handleSelectNone} >
       {`${__('Select none')} (0)`}
     </DropdownItem>,
-    <DropdownItem key="select-page" component="button" isDisabled={areAllRowsOnPageSelected} onClick={handleSelectPage}>
+    <DropdownItem key="select-page" id="page" component="button" isDisabled={areAllRowsOnPageSelected} onClick={handleSelectPage}>
       {`${__('Select page')} (${pageRowCount})`}
     </DropdownItem>,
   ];
+  if (isSelectAllChecked !== null) {
+    const selectAll = (
+      <DropdownItem key="select-all" id="all" component="button" isDisabled={isSelectAllChecked} onClick={handleSelectAll}>
+        {`${__('Select all')} (${totalCount})`}
+      </DropdownItem>
+    );
+    selectAllDropdownItems.push(selectAll);
+  }
 
   return (
     <Dropdown
@@ -83,29 +102,35 @@ const SelectAllCheckbox = ({
               key="tablewrapper-select-all-checkbox"
               aria-label="Select all"
               onChange={checked => onSelectAllCheckboxChange(checked)}
-              isChecked={isSelectAllChecked}
+              isChecked={selectionToggle}
             >
               {selectedCount > 0 && `${selectedCount} selected`}
             </DropdownToggleCheckbox>,
           ]}
         />
-    }
+      }
+      onSelect={onSelect}
       isOpen={isSelectAllDropdownOpen}
       dropdownItems={selectAllDropdownItems}
+      id="selection-checkbox"
     />
   );
 };
 
-// TODO: uncomment selectAll and totalCount when Select All is implemented
 SelectAllCheckbox.propTypes = {
   selectedCount: PropTypes.number.isRequired,
-  // selectAll: PropTypes.func.isRequired,
   selectNone: PropTypes.func.isRequired,
   selectPage: PropTypes.func.isRequired,
+  setSelectAllChecked: PropTypes.func,
   pageRowCount: PropTypes.number.isRequired,
-  // totalCount: PropTypes.number.isRequired,
-  areAllRowsSelected: PropTypes.bool.isRequired,
+  totalCount: PropTypes.number.isRequired,
+  isSelectAllChecked: PropTypes.bool,
   areAllRowsOnPageSelected: PropTypes.bool.isRequired,
+};
+
+SelectAllCheckbox.defaultProps = {
+  isSelectAllChecked: null,
+  setSelectAllChecked: noop,
 };
 
 export default SelectAllCheckbox;
