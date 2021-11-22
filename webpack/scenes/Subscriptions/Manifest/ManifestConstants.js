@@ -29,3 +29,6 @@ export const SIMPLE_CONTENT_ACCESS_ELIGIBLE_FAILURE = 'SIMPLE_CONTENT_ACCESS_ELI
 // Modal IDs
 export const MANAGE_MANIFEST_MODAL_ID = 'manageManifestModal';
 export const DELETE_MANIFEST_MODAL_ID = 'deleteManifestModal';
+
+
+export const CDN_URL = 'https://cdn.redhat.com';

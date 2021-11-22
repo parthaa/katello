@@ -6,6 +6,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { isEmpty } from 'lodash';
 import { Grid, Row, Col } from 'react-bootstrap';
+import { Skeleton, Alert } from '@patternfly/react-core';
 import { Button } from 'patternfly-react';
 import { translate as __ } from 'foremanReact/common/I18n';
 import PermissionDenied from 'foremanReact/components/PermissionDenied';
@@ -22,12 +23,13 @@ class RedHatRepositoriesPage extends Component {
   }
 
   loadData() {
+    this.props.loadOrganization();
     this.props.loadEnabledRepos();
     this.props.loadRepositorySets({ search: { filters: ['rpm'] } });
   }
 
   render() {
-    const { enabledRepositories, repositorySets } = this.props;
+    const { enabledRepositories, repositorySets, organization } = this.props;
     const { repoParams } = createEnabledRepoParams(enabledRepositories);
 
     if (!isEmpty(repositorySets.missingPermissions)) {
@@ -35,6 +37,26 @@ class RedHatRepositoriesPage extends Component {
     }
     if (!isEmpty(enabledRepositories.missingPermissions)) {
       return <PermissionDenied missingPermissions={enabledRepositories.missingPermissions} />;
+    }
+    if (!(organization?.cdn_configuration)) {
+      return <Skeleton/>;
+    }
+    if (organization.cdn_configuration.airgapped) {
+      return (
+        <Grid id="redhatRepositoriesPage" bsClass="container-fluid">
+          <h1>{__('Red Hat Repositories')}</h1>
+          <Row className="toolbar-pf">
+            <Col>
+              <Alert
+                variant="info"
+                className="repo-sets-alert"
+                isInline
+                title={__('CDN configuration is set to Air-gapped (disconnected). Repository enablement/disablement is not permitted on this page.')}
+              />
+            </Col>
+        </Row>
+        </Grid>
+      )
     }
 
     return (
