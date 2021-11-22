@@ -1,6 +1,12 @@
 module Katello
   class CdnConfiguration < Katello::Model
     include Encryptable
+    self.inheritance_column = nil
+    CDN_TYPE =  'cdn'.freeze
+    SATELLITE_TYPE =  'satellite'.freeze
+    AIRGAPPED_TYPE = 'airgapped'.freeze
+
+    TYPES = [CDN_TYPE, SATELLITE_TYPE, AIRGAPPED_TYPE].freeze
 
     belongs_to :organization, :inverse_of => :cdn_configuration
 
@@ -8,20 +14,41 @@ module Katello
 
     encrypts :password
 
-    validates :url, presence: true
-    validates_with Validators::KatelloUrlFormatValidator, attributes: :url
+    validates :url, presence: true, unless: :airgapped?
+    validates_with Validators::KatelloUrlFormatValidator, attributes: :url, unless: :airgapped?
     validates_with Validators::KatelloLabelFormatValidator, attributes: :upstream_organization_label, if: proc { upstream_organization_label.present? }
-    validate :non_redhat_configuration, unless: :redhat?
+    validate :non_redhat_configuration, if: :satellite?
+
+    before_validation :reset_fields
 
     def ssl_ca
       ssl_ca_credential&.content
     end
 
-    def redhat?
-      username.blank? && password.blank? && upstream_organization_label.blank? && ssl_ca_credential_id.blank?
+    def cdn?
+      type == CDN_TYPE
+    end
+
+    def airgapped?
+      type == AIRGAPPED_TYPE
+    end
+
+    def satellite?
+      type == SATELLITE_TYPE
     end
 
     private
+
+    def reset_fields
+      return if satellite?
+
+      self.url = nil
+      self.url = SETTINGS[:katello][:redhat_repository_url] if cdn?
+      self.username = nil
+      self.password = nil
+      self.upstream_organization_label = nil
+      self.ssl_ca_credential_id = nil
+    end
 
     def non_redhat_configuration
       if username.blank? || password.blank? || upstream_organization_label.blank? || ssl_ca_credential_id.blank?

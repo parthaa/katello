@@ -139,8 +139,9 @@ module Katello
     param :password, String, :desc => N_("Password for authentication")
     param :upstream_organization_label, String, :desc => N_("Upstream organization to sync CDN content from")
     param :url, String, :desc => N_("Upstream server to sync CDN content from")
+    param :airgapped, :boolean, :desc => N_("True if this configuration is air-gapped (disconnected.)")
     def cdn_configuration
-      config_keys = [:url, :username, :password, :upstream_organization_label, :ssl_ca_credential_id]
+      config_keys = [:url, :username, :password, :upstream_organization_label, :ssl_ca_credential_id, :type]
       config_params = params.slice(*config_keys).permit!.to_h
 
       task = sync_task(::Actions::Katello::CdnConfiguration::Update, @organization.cdn_configuration, config_params)
