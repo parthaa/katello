@@ -6,7 +6,7 @@ class AddTypeToCdnConfiguration < ActiveRecord::Migration[6.0]
              config.password.blank? ||
              config.upstream_organization_label.blank? ||
              config.ssl_ca_credential_id.blank?
-        config.update!(type: ::Katello::CdnConfiguration::SATELLITE_TYPE)
+        config.update!(type: ::Katello::CdnConfiguration::UPSTREAM_SERVER_TYPE)
       end
     end
   end

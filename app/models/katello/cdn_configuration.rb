@@ -2,11 +2,11 @@ module Katello
   class CdnConfiguration < Katello::Model
     include Encryptable
     self.inheritance_column = nil
-    CDN_TYPE =  'cdn'.freeze
-    SATELLITE_TYPE =  'satellite'.freeze
+    CDN_TYPE =  'redhat_cdn'.freeze
+    UPSTREAM_SERVER_TYPE =  'upstream_server'.freeze
     AIRGAPPED_TYPE = 'airgapped'.freeze
 
-    TYPES = [CDN_TYPE, SATELLITE_TYPE, AIRGAPPED_TYPE].freeze
+    TYPES = [CDN_TYPE, UPSTREAM_SERVER_TYPE, AIRGAPPED_TYPE].freeze
 
     belongs_to :organization, :inverse_of => :cdn_configuration
 
@@ -17,7 +17,7 @@ module Katello
     validates :url, presence: true, unless: :airgapped?
     validates_with Validators::KatelloUrlFormatValidator, attributes: :url, unless: :airgapped?
     validates_with Validators::KatelloLabelFormatValidator, attributes: :upstream_organization_label, if: proc { upstream_organization_label.present? }
-    validate :non_redhat_configuration, if: :satellite?
+    validate :non_redhat_configuration, if: :upstream_server?
 
     before_validation :reset_fields
 
@@ -33,14 +33,14 @@ module Katello
       type == AIRGAPPED_TYPE
     end
 
-    def satellite?
-      type == SATELLITE_TYPE
+    def upstream_server?
+      type == UPSTREAM_SERVER_TYPE
     end
 
     private
 
     def reset_fields
-      return if satellite?
+      return if upstream_server?
 
       self.url = nil
       self.url = SETTINGS[:katello][:redhat_repository_url] if cdn?
@@ -48,6 +48,8 @@ module Katello
       self.password = nil
       self.upstream_organization_label = nil
       self.ssl_ca_credential_id = nil
+      self.upstream_content_view_label = nil
+      self.upstream_lifecycle_environment_label = nil
     end
 
     def non_redhat_configuration

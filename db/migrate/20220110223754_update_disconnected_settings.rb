@@ -2,8 +2,9 @@ class UpdateDisconnectedSettings < ActiveRecord::Migration[6.0]
   def up
     setting_disconnected  = Setting.find_by(name: 'content_disconnected', category: 'Setting::Content')
     setting  = Setting.find_by(name: 'subscription_connection_enabled', category: 'Setting::Content')
-    setting.update!(
-      value: !setting_disconnected.value
+
+    setting&.update!(
+      value: !setting_disconnected&.value
     )
     Setting.where(:name => 'content_disconnected', :category => 'Setting::Content').delete_all
   end

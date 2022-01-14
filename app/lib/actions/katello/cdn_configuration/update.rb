@@ -6,7 +6,7 @@ module Actions
           cdn_configuration.update!(options)
           return if cdn_configuration.airgapped?
 
-          if cdn_configuration.satellite?
+          if cdn_configuration.upstream_server?
             resource = ::Katello::Resources::CDN::CdnResource.create(cdn_configuration: cdn_configuration)
             keypair = resource.debug_certificate
             cdn_configuration.ssl_cert = OpenSSL::X509::Certificate.new(keypair)
