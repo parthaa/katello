@@ -302,7 +302,7 @@ module Katello
     end
 
     def immediate?
-      root.download_policy == ::Katello::RootRepository::DOWNLOAD_ON_IMMEDIATE
+      root.download_policy == ::Katello::RootRepository::DOWNLOAD_IMMEDIATE
     end
 
     def yum_gpg_key_url

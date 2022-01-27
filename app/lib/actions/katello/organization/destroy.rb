@@ -61,7 +61,7 @@ module Actions
               plan_action(Katello::Environment::Destroy, env, :skip_repo_destroy => true, :organization_destroy => true)
             end
           end
-          plan_action(Katello::Environment::Destroy, organization.library, :skip_repo_destroy => true, :organization_destroy => true)
+          plan_action(Katello::Environment::Destroy, organization.library, :skip_repo_destroy => true)
         end
 
         def remove_content_view_environment(cv_env)

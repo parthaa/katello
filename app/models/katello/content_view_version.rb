@@ -23,7 +23,7 @@ module Katello
     has_many :triggered_histories, :class_name => "Katello::ContentViewHistory", :dependent => :destroy,
              :inverse_of => :triggered_by, :foreign_key => :triggered_by_id
 
-    has_many :export_histories, :class_name => "::Katello::ContentViewVersionExportHistory", :dependent => :destroy,
+    has_many :export_histories, :class_name => "::Katello::ContentViewVersionExportHistory", :dependent => :nullify,
              :inverse_of => :content_view_version
     has_many :import_histories, :class_name => "::Katello::ContentViewVersionImportHistory", :dependent => :destroy,
              :inverse_of => :content_view_version

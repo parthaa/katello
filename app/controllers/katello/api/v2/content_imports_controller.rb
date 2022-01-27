@@ -1,7 +1,7 @@
 module Katello
   class Api::V2::ContentImportsController < Api::V2::ApiController
-    before_action :find_organization, :only => [:version]
-    before_action :check_authorized, :only => [:version]
+    before_action :find_organization, :only => [:version, :repository, :library]
+    before_action :check_authorized, :only => [:version, :repository, :library]
 
     before_action :find_importable_organization, :only => [:library]
     before_action :find_default_content_view, :only => [:library]
@@ -43,6 +43,15 @@ module Katello
     param :metadata, Hash, :desc => N_("Metadata taken from the upstream export history for this Content View Version"), :required => true
     def library
       task = async_task(::Actions::Katello::ContentViewVersion::ImportLibrary, @organization, path: params[:path], metadata: metadata_params.to_h)
+      respond_for_async :resource => task
+    end
+
+    api :POST, "/content_imports/repository", N_("Import a repository")
+    param :organization_id, :number, :desc => N_("Organization identifier"), :required => true
+    param :path, String, :desc => N_("Directory containing the exported Content View Version"), :required => true
+    param :metadata, Hash, :desc => N_("Metadata taken from the upstream export history for this Content View Version"), :required => true
+    def repository
+      task = async_task(::Actions::Katello::ContentViewVersion::ImportRepository, @organization, path: params[:path], metadata: metadata_params.to_h)
       respond_for_async :resource => task
     end
 
