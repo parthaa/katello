@@ -64,6 +64,7 @@ export default () => {
 
   const {
     name, composite, permissions, environments, versions,
+    generated_by_export: generatedByExport, import_only: importOnly,
   } = details;
   const tabs = [
     {
@@ -85,6 +86,7 @@ export default () => {
       title: __('Repositories'),
       content: <ContentViewRepositories {...{ cvId, details }} />,
     },
+    !(importOnly || generatedByExport) &&
     {
       key: 'filters',
       title: __('Filters'),
@@ -121,7 +123,12 @@ export default () => {
               <Flex justifyContent={{ lg: 'justifyContentFlexEnd', sm: 'justifyContentFlexStart' }}>
                 {hasPermission(permissions, 'publish_content_views') &&
                   <FlexItem>
-                    <Button onClick={() => { setIsPublishModalOpen(true); }} variant="primary" aria-label="publish_content_view">
+                    <Button
+                      isDisabled={importOnly || generatedByExport}
+                      onClick={() => { setIsPublishModalOpen(true); }}
+                      variant="primary"
+                      aria-label="publish_content_view"
+                    >
                       {__('Publish new version')}
                     </Button>
                     {isPublishModalOpen && <PublishContentViewWizard

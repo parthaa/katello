@@ -74,6 +74,14 @@ module Katello
               if: :solve_dependencies
     validate :import_only_immutable
 
+    validates :generated_by_export, :inclusion => [true, false]
+    validates :generated_by_export,
+              inclusion: { in: [false], message: "Generated Content Views can not be Composite"},
+              if: :composite
+    validates :generated_by_export,
+              inclusion: { in: [false], message: "Generated Content Views can not solve dependencies"},
+              if: :solve_dependencies
+
     validates_with Validators::KatelloNameFormatValidator, :attributes => :name
     validates_with Validators::KatelloLabelFormatValidator, :attributes => :label
 
@@ -86,6 +94,7 @@ module Katello
     scoped_search :on => :organization_id, :complete_value => true, :only_explicit => true, :validator => ScopedSearch::Validators::INTEGER
     scoped_search :on => :label, :complete_value => true
     scoped_search :on => :composite, :complete_value => true
+    scoped_search :on => :generated_by_export, :complete_value => true
 
     set_crud_hooks :content_view
 

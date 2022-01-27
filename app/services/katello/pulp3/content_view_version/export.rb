@@ -150,13 +150,31 @@ module Katello
           MetadataGenerator.new(export_service: self).generate!
         end
 
+        def self.find_generated_export_view(create_by_default: false,
+                                            destination_server:,
+                                            organization:,
+                                            name:)
+          name += "-#{destination_server}" unless destination_server.blank?
+          select_method = create_by_default ? :first_or_create : :first
+          ::Katello::ContentView.where(name: name, organization: organization, generated_by_export: true).send(select_method)
+        end
+
         def self.find_library_export_view(create_by_default: false,
                                           destination_server:,
                                           organization:)
-          name = ::Katello::ContentView::EXPORT_LIBRARY
-          name += "-#{destination_server}" unless destination_server.blank?
-          select_method = create_by_default ? :first_or_create : :first
-          ::Katello::ContentView.where(name: name, organization: organization).send(select_method)
+          find_generated_export_view(create_by_default: create_by_default,
+                                     destination_server: destination_server,
+                                     organization: organization,
+                                     name: ::Katello::ContentView::EXPORT_LIBRARY)
+        end
+
+        def self.find_repository_export_view(create_by_default: false,
+                                              destination_server:,
+                                              repository:)
+          find_generated_export_view(create_by_default: create_by_default,
+                                     destination_server: destination_server,
+                                     organization: repository.organization,
+                                     name: "Export-#{repository.label}")
         end
 
         def self.generate_product_repo_strings(repositories:)
