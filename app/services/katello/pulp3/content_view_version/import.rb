@@ -43,11 +43,70 @@ module Katello
           api.importer_api.delete(importer_href)
         end
 
-        def self.check!(content_view:, metadata:, path:, smart_proxy:)
+        def self.prune_missing_content!(metadata:, organization:)
+          products_in_library = ::Katello::Product.in_org(organization).redhat.pluck(:label)
+          product_repos_in_library = repositories_in_library(organization).redhat.
+                                        pluck("#{Katello::Product.table_name}.label",
+                                              "#{Katello::RootRepository.table_name}.label")
+
+          metadata[:missing_repositories] = []
+          metadata[:partial_repositories_not_imported] = []
+
+          # Map products to repositories in the metadata
+          # {product_label: [repositories with this product]}
+          repos_in_metadata_map = {}
+          metadata[:repositories].values.each do |repo|
+            next unless repo[:redhat]
+            repos_in_metadata_map[repo[:product][:label]] ||= []
+            repos_in_metadata_map[repo[:product][:label]] << repo
+          end
+
+          # Find products in the metadata that cannot be enabled (ie products_not_in_library).
+          # Add them to the missing repositories
+          products_not_in_library = repos_in_metadata_map.keys - products_in_library
+
+          products_not_in_library.each do |prod|
+            metadata[:missing_repositories] += repos_in_metadata_map[prod].map do |repo|
+              repo.slice(:name, :label).merge(product: metadata[:products][prod].slice(:name, :label))
+            end
+            metadata[:missing_repositories].flatten!
+          end
+
+          # iterate through products that can be enabled or already have
+          # Find if any of the non enabled repositories is a partial
+          # If that is the case we need to add those to missing_repositories
+          # and partial_repositories_not_imported.
+          # Hammer will pick up and warn the user accordingly using knowledge from
+          # missing repositories and partial_repositories_not_imported
+          #
+          (repos_in_metadata_map.keys & products_in_library).each do |prod|
+            repos_in_metadata_map[prod].each do |repo|
+              next unless repo[:partial]
+              next if product_repos_in_library.include?([prod, repo[:label]])
+              repo_info = repo.slice(:name, :label).
+                            merge(product: metadata[:products][prod].slice(:name, :label))
+              metadata[:missing_repositories] <<  repo_info
+              metadata[:partial_repositories_not_imported] << repo_info
+            end
+          end
+
+          repositories_to_skip = metadata[:missing_repositories].map {|repo| [repo[:label], repo[:product][:label]]}
+
+          metadata[:repositories].reject! do |_, value|
+            repositories_to_skip.include?([value[:label], value[:product][:label]])
+          end
+
+          metadata[:products].reject! do |_, value|
+            products_not_in_library.include?(value[:label])
+          end
+        end
+
+        def self.check!(content_view:, metadata:, path:, smart_proxy:, fail_on_missing_content:)
           ImportValidator.new(smart_proxy: smart_proxy,
                                content_view: content_view,
                                metadata: metadata,
-                               path: path).check!
+                               path: path,
+                               fail_on_missing_content: fail_on_missing_content).check!
         end
 
         def self.create_or_update_gpg!(organization:, params:)

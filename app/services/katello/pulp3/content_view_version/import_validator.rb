@@ -2,15 +2,16 @@ module Katello
   module Pulp3
     module ContentViewVersion
       class ImportValidator
-        attr_accessor :metadata, :path, :content_view, :smart_proxy
+        attr_accessor :metadata, :path, :content_view, :smart_proxy, :fail_on_missing_content
 
         delegate :organization, :to => :content_view
 
-        def initialize(content_view:, path:, metadata:, smart_proxy:)
+        def initialize(content_view:, path:, metadata:, smart_proxy:, fail_on_missing_content:)
           self.content_view = content_view
           self.path = path
           self.metadata = metadata
           self.smart_proxy = smart_proxy
+          self.fail_on_missing_content = fail_on_missing_content
         end
 
         def check!
@@ -21,7 +22,7 @@ module Katello
           end
           ensure_manifest_imported!
           ensure_metadata_matches_repos_in_library!
-          ensure_redhat_products_metadata_are_in_the_library!
+          ensure_redhat_products_metadata_are_in_the_library! if fail_on_missing_content
         end
 
         def ensure_pulp_importable!

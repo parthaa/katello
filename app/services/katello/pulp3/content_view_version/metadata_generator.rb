@@ -47,7 +47,15 @@ module Katello
             merge(product: generate_product_metadata(repo.product),
                   gpg_key: generate_gpg_metadata(repo.gpg_key),
                   content: generate_content_metadata(repo.content),
-                  redhat: repo.redhat?)
+                  redhat: repo.redhat?,
+                  partial: partial?)
+        end
+
+        def partial?(repo)
+          return false if from_content_view_version.blank?
+          from_content_view_version.archived_repos.exportable.any? do |r|
+            r.label == repo.label && r.content_type == repo.content_type
+          end
         end
 
         def generate_product_metadata(product)

@@ -2,17 +2,22 @@ module Actions
   module Katello
     module ContentViewVersion
       class Import < Actions::EntryAction
-        def plan(organization:, path:, metadata:, library: false)
+        def plan(organization:, path:, metadata:, library: false, fail_on_missing_content: false)
           fail _("Content view not provided in the metadata") if metadata[:content_view].blank?
           content_view = ::Katello::Pulp3::ContentViewVersion::Import.
                                 find_or_create_import_view(organization: organization,
                                                            metadata: metadata[:content_view],
                                                            library: library)
           content_view.check_ready_to_import!
+          unless fail_on_missing_content
+            ::Katello::Pulp3::ContentViewVersion::Import.prune_missing_content!(metadata: metadata,
+                                                                                 organization: organization)
+          end
           ::Katello::Pulp3::ContentViewVersion::Import.check!(content_view: content_view,
                                                               metadata: metadata,
                                                               path: path,
-                                                              smart_proxy: SmartProxy.pulp_primary!)
+                                                              smart_proxy: SmartProxy.pulp_primary!,
+                                                              fail_on_missing_content: fail_on_missing_content)
 
           major = metadata[:content_view_version][:major]
           minor = metadata[:content_view_version][:minor]
