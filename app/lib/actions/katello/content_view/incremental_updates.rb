@@ -13,7 +13,7 @@ module Actions
             concurrence do
               version_environments.each do |version_environment|
                 version = version_environment[:content_view_version]
-                if version.content_view.generated_by_export?
+                if version.content_view.generated?
                   fail _("Cannot perform an incremental update on a Generated Content View Version (%{name} version version %{version}") %
                     {:name => version.content_view.name, :version => version.version}
                 end

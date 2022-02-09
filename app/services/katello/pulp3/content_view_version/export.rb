@@ -153,10 +153,13 @@ module Katello
         def self.find_generated_export_view(create_by_default: false,
                                             destination_server:,
                                             organization:,
-                                            name:)
+                                            name:,
+                                            generated_for:)
           name += "-#{destination_server}" unless destination_server.blank?
           select_method = create_by_default ? :first_or_create : :first
-          ::Katello::ContentView.where(name: name, organization: organization, generated_by_export: true).send(select_method)
+          ::Katello::ContentView.where(name: name,
+                                       organization: organization,
+                                       generated_for: generated_for).send(select_method)
         end
 
         def self.find_library_export_view(create_by_default: false,
@@ -165,7 +168,8 @@ module Katello
           find_generated_export_view(create_by_default: create_by_default,
                                      destination_server: destination_server,
                                      organization: organization,
-                                     name: ::Katello::ContentView::EXPORT_LIBRARY)
+                                     name: ::Katello::ContentView::EXPORT_LIBRARY,
+                                     generated_for: :library_export)
         end
 
         def self.find_repository_export_view(create_by_default: false,
@@ -174,7 +178,8 @@ module Katello
           find_generated_export_view(create_by_default: create_by_default,
                                      destination_server: destination_server,
                                      organization: repository.organization,
-                                     name: "Export-#{repository.label}")
+                                     name: "Export-#{repository.label}",
+                                     generated_for: :repository_export)
         end
 
         def self.generate_product_repo_strings(repositories:)

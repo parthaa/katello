@@ -24,7 +24,7 @@ module Katello
                          version.content_view.slice(:name,
                                                     :label,
                                                     :description,
-                                                    :generated_by_export)
+                                                    :generated_for)
 
             version_repositories = version.archived_repos.yum_type
             data[:repositories].each do |name, repo_info|

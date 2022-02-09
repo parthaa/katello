@@ -67,7 +67,7 @@ module Katello
         :incremental,
         :destination_server,
         gpg_keys: {},
-        content_view: [:name, :label, :description, :generated_by_export],
+        content_view: [:name, :label, :description, :generated_for],
         content_view_version: [:major, :minor, :description],
         from_content_view_version: [:major, :minor]
       ).tap do |nested|

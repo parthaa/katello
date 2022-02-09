@@ -44,7 +44,7 @@ module ::Actions::Katello::ContentViewVersion
           name: ::Katello::ContentView::EXPORT_LIBRARY,
           label: ::Katello::ContentView::EXPORT_LIBRARY,
           description: 'great',
-          generated_by_export: true
+          generated_for: :library_export
         }
       }.with_indifferent_access
     end

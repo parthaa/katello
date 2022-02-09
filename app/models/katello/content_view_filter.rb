@@ -163,7 +163,7 @@ module Katello
         errors.add(:base, _("cannot add filter to import-only view"))
       end
 
-      if self.content_view.generated_by_export?
+      if self.content_view.generated?
         errors.add(:base, _("cannot add filter to generated content views"))
       end
     end

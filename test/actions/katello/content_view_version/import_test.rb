@@ -130,7 +130,7 @@ module ::Actions::Katello::ContentViewVersion
       it 'should create the library cv and plan properly' do
         metadata[:content_view] = { name: ::Katello::ContentView::EXPORT_LIBRARY,
                                     label: ::Katello::ContentView::EXPORT_LIBRARY,
-                                    generated_by_export: true
+                                    generated_for: :library_export
                                   }
         ::Katello::Pulp3::ContentViewVersion::Import.expects(:check!).returns
 

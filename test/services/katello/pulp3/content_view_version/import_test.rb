@@ -137,11 +137,11 @@ module Katello
                     find_or_create_import_view(organization: org,
                                                 metadata: { name: ::Katello::ContentView::EXPORT_LIBRARY,
                                                             label: ::Katello::ContentView::EXPORT_LIBRARY,
-                                                            generated_by_export: true })
+                                                            generated_for: :library_export })
             assert_equal cv.label, ::Katello::ContentView::IMPORT_LIBRARY
             assert_equal cv.organization, org
             assert cv.import_only?
-            assert cv.generated_by_export?
+            assert cv.generated_for_library_import?
           end
 
           it "should create the import name for generated content" do
@@ -151,12 +151,12 @@ module Katello
                     find_or_create_import_view(organization: org,
                                                 metadata: { name: "Export-Repository-#{destination_server}",
                                                             label: "Export-Repository-#{destination_server}",
-                                                            generated_by_export: true,
+                                                            generated_for: :repository_export,
                                                             destination_server: "Foo" })
             assert_equal cv.label, "Import-Repository"
             assert_equal cv.organization, org
             assert cv.import_only?
-            assert cv.generated_by_export?
+            assert cv.generated_for_repository_import?
           end
         end
       end

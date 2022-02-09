@@ -44,7 +44,7 @@ module ::Actions::Katello::ContentViewVersion
           name: "Export-Repository",
           label: 'Export-Repository',
           description: 'great',
-          generated_by_export: true
+          generated_for: :repository_export
         },
         destination_server: "wow"
       }.with_indifferent_access

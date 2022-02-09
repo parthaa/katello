@@ -78,8 +78,8 @@ const ContentViewRepositories = ({ cvId, details }) => {
   const error = useSelector(state => selectCVReposError(state, cvId), shallowEqual);
   const repoTypesResponse = useSelector(state => selectRepoTypes(state), shallowEqual);
   const repoTypesStatus = useSelector(state => selectRepoTypesStatus(state), shallowEqual);
-  const { permissions, generated_by_export: generatedByExport, import_only: importOnly } = details;
-
+  const { permissions, generated_for: generatedFor, import_only: importOnly } = details;
+  const generatedContentView = generatedFor !== "none";
   const [rows, setRows] = useState([]);
   const deselectAll = () => setRows(rows.map(row => ({ ...row, selected: false })));
   const [searchQuery, updateSearchQuery] = useState('');
@@ -223,14 +223,14 @@ const ContentViewRepositories = ({ cvId, details }) => {
     return [
       {
         title: 'Add',
-        isDisabled: importOnly || generatedByExport || added,
+        isDisabled: importOnly || generatedContentView || added,
         onClick: (_event, _rowId, rowInfo) => {
           onAdd(rowInfo.repoId);
         },
       },
       {
         title: 'Remove',
-        isDisabled: importOnly || generatedByExport || !added,
+        isDisabled: importOnly || generatedContentView || !added,
         onClick: (_event, _rowId, rowInfo) => {
           onRemove(rowInfo.repoId);
         },
@@ -275,7 +275,7 @@ const ContentViewRepositories = ({ cvId, details }) => {
         defaultFilters,
       }}
       actionResolver={hasPermission(permissions, 'edit_content_views') ? actionResolver : null}
-      onSelect={hasPermission(permissions, 'edit_content_views') && !(importOnly || generatedByExport) ? onSelect(rows, setRows) : null}
+      onSelect={hasPermission(permissions, 'edit_content_views') && !(importOnly || generatedContentView) ? onSelect(rows, setRows) : null}
       cells={columnHeaders}
       variant={TableVariant.compact}
       autocompleteEndpoint="/repositories/auto_complete_search"
@@ -307,7 +307,7 @@ const ContentViewRepositories = ({ cvId, details }) => {
             <SplitItem>
               <ActionList>
                 <ActionListItem>
-                  <Button onClick={addBulk} isDisabled={!hasNotAddedSelected || importOnly || generatedByExport} variant="secondary" aria-label="add_repositories">
+                  <Button onClick={addBulk} isDisabled={!hasNotAddedSelected || importOnly || generatedContentView} variant="secondary" aria-label="add_repositories">
                     {__('Add repositories')}
                   </Button>
                 </ActionListItem>
@@ -334,7 +334,7 @@ ContentViewRepositories.propTypes = {
     repository_ids: PropTypes.arrayOf(PropTypes.number),
     permissions: PropTypes.shape({}),
     import_only: PropTypes.bool,
-    generated_by_export: PropTypes.bool,
+    generated_for: PropTypes.string,
   }).isRequired,
 };
 

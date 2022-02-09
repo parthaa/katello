@@ -33,10 +33,10 @@ const ContentViewInfo = ({ cvId, details }) => {
     solve_dependencies: solveDependencies,
     auto_publish: autoPublish,
     import_only: importOnly,
-    generated_by_export: generatedByExport,
+    generated_for: generatedFor
     permissions,
   } = details;
-
+  const generatedContentView = generatedFor !== "none";
   const onEdit = (val, attribute) => {
     if (val === details[attribute]) return;
     dispatch(updateContentView(cvId, { [attribute]: val }));
@@ -130,7 +130,7 @@ const ContentViewInfo = ({ cvId, details }) => {
           <Switch
             id="generated_by_export_switch"
             aria-label="generated_by_export_switch"
-            isChecked={generatedByExport}
+            isChecked={generatedContentView}
             className="foreman-spaced-list"
             disabled
           />
@@ -150,7 +150,7 @@ ContentViewInfo.propTypes = {
     solve_dependencies: PropTypes.bool,
     auto_publish: PropTypes.bool,
     import_only: PropTypes.bool,
-    generated_by_export: PropTypes.bool,
+    generated_for: PropTypes.string,
     permissions: PropTypes.shape({}),
   }).isRequired,
 };

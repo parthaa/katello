@@ -65,7 +65,7 @@ module Katello
 
     def index_relation
       content_views = ContentView.readable
-      #content_views = content_views.where(generated_by_export: false) unless Foreman::Cast.to_bool(params[:include_generated])
+      #content_views = content_views.where(generated_for: :none) unless Foreman::Cast.to_bool(params[:include_generated])
       content_views = content_views.where(:organization_id => @organization.id) if @organization
       content_views = content_views.in_environment(@environment) if @environment
       content_views = ::Foreman::Cast.to_bool(params[:nondefault]) ? content_views.non_default : content_views.default if params[:nondefault]
@@ -263,7 +263,7 @@ module Katello
         fail HttpErrors::BadRequest, _("Import only Content Views cannot be directly publsihed. Content can only be updated by importing into the view.")
       end
 
-      if @content_view.generated_by_export?
+      if @content_view.generated?
         fail HttpErrors::BadRequest, _("Generated content views cannot be directly published. They can updated only via export.")
       end
     end

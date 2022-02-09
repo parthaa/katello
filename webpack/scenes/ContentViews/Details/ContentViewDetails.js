@@ -64,8 +64,9 @@ export default () => {
 
   const {
     name, composite, permissions, environments, versions,
-    generated_by_export: generatedByExport, import_only: importOnly,
+    generated_for: generatedFor, import_only: importOnly,
   } = details;
+  const generatedContentView = generatedFor !== "none";
   const tabs = [
     {
       key: 'details',
@@ -86,7 +87,7 @@ export default () => {
       title: __('Repositories'),
       content: <ContentViewRepositories {...{ cvId, details }} />,
     },
-    !(importOnly || generatedByExport) &&
+    !(importOnly || generatedContentView) &&
     {
       key: 'filters',
       title: __('Filters'),
@@ -124,7 +125,7 @@ export default () => {
                 {hasPermission(permissions, 'publish_content_views') &&
                   <FlexItem>
                     <Button
-                      isDisabled={importOnly || generatedByExport}
+                      isDisabled={importOnly || generatedContentView}
                       onClick={() => { setIsPublishModalOpen(true); }}
                       variant="primary"
                       aria-label="publish_content_view"
