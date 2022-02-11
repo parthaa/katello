@@ -95,7 +95,6 @@ module Katello
     end
 
     def test_docker_count
-      SmartProxy.stubs(:pulp_primary).returns(SmartProxy.pulp_primary)
       cv = katello_content_views(:library_view)
       cvv = cv.versions.first
       assert cvv.repositories.archived.docker_type.count > 0
@@ -125,7 +124,6 @@ module Katello
     end
 
     def test_python_package_count
-      SmartProxy.stubs(:pulp_primary).returns(SmartProxy.pulp_primary)
       cv = katello_content_views(:acme_default)
       cvv = cv.versions.first
 
