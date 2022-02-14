@@ -2,10 +2,10 @@ module Actions
   module Katello
     module ContentViewVersion
       class AutoCreateProducts < Actions::Base
-        def plan(organization:, metadata:)
+        def plan(organization:, metadata_products:)
           helper = ::Katello::Pulp3::ContentViewVersion::ImportableProducts.
                       new(organization: organization,
-                          metadata: metadata)
+                          metadata_products: metadata_products)
           helper.generate!
           concurrence do
             helper.creatable.each do |product|

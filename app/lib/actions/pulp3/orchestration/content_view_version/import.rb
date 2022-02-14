@@ -3,6 +3,7 @@ module Actions
     module Orchestration
       module ContentViewVersion
         class Import < Actions::EntryAction
+          # TODO: see which of these really need metadata vs metadata_map
           def plan(content_view_version, path:, metadata:)
             action_subject(content_view_version)
             sequence do

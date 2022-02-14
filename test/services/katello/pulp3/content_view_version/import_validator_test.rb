@@ -32,7 +32,7 @@ module Katello
                 returns(api)
 
               exception = assert_raises(RuntimeError) do
-                metadata = { content_view: cvv.content_view.slice(:name, :label, :description), content_view_version: cvv.slice(:major, :minor) }
+                metadata = { products: {}, repositories: {}, content_view: cvv.content_view.slice(:name, :label, :description), content_view_version: cvv.slice(:major, :minor) }
                 validator(content_view: cvv.content_view, metadata: metadata).check!
               end
               assert_equal(invalid_message, exception.message)
@@ -42,7 +42,7 @@ module Katello
               cvv = katello_content_view_versions(:library_view_version_2)
               ::Katello::Pulp3::ContentViewVersion::ImportValidator.any_instance.expects(:ensure_pulp_importable!).returns
               exception = assert_raises(RuntimeError) do
-                metadata = { content_view: cvv.content_view.slice(:name, :label, :description), content_view_version: cvv.slice(:major, :minor) }
+                metadata = { products: {}, repositories: {}, content_view: cvv.content_view.slice(:name, :label, :description), content_view_version: cvv.slice(:major, :minor) }
                 validator(content_view: cvv.content_view, metadata: metadata).check!
               end
               assert_match(/already exists/, exception.message)
@@ -55,7 +55,9 @@ module Katello
               exception = assert_raises(RuntimeError) do
                 metadata = { content_view: cvv.content_view.slice(:name, :label, :description),
                              content_view_version: { major: cvv.major + 10, minor: cvv.minor },
-                             from_content_view_version: { major: cvv.major + 8, minor: cvv.minor }
+                             from_content_view_version: { major: cvv.major + 8, minor: cvv.minor },
+                             products: {},
+                             repositories: {}
                 }
                 validator(content_view: cvv.content_view, metadata: metadata).check!
               end
@@ -77,7 +79,8 @@ module Katello
                              repositories: {
                                "misc-24037": { label: repo.label,
                                                product: { name: repo.product.name, label: repo.product.label},
-                                               redhat: !repo.redhat?
+                                               redhat: !repo.redhat?,
+                                               content: { id: 1, label: repo.root.content.label }
                                              }
                              },
                              gpg_keys: {}
@@ -103,7 +106,8 @@ module Katello
                              repositories: {
                                "misc-24037": { label: "misc",
                                                product: {label: 'prod'},
-                                               "redhat": true
+                                               "redhat": true,
+                                               content: { id: 1, label: 'rhel-7-server'}
                                              }
                              }
                 }
@@ -123,17 +127,19 @@ module Katello
                              content_view_version: { major: cvv.major + 10, minor: cvv.minor },
                              products: {
                                "prod" => { name: "prod", label: 'prod'},
-                               "redhat_label" => { name: 'Red Hat Linux', label: 'redhat_label'}
+                               "redhat_label" => { name: 'Red Hat Linux', label: 'redhat_label', redhat: true }
                              },
                              gpg_keys: {},
                              repositories: {
                                "misc-24037": { label: "misc",
                                                product: {label: 'prod'},
-                                               "redhat": true
+                                               "redhat": true,
+                                               content: { id: 1, label: 'rhel-7-server'}
                                              },
                                "rhel-7": { label: "rhel_7",
                                            product: {label: 'redhat_label'},
-                                           "redhat": true
+                                           "redhat": true,
+                                           content: { id: 1, label: 'rhel-7-server'}
                                 }
                              }
                 }
@@ -143,6 +149,39 @@ module Katello
               assert_match(/prod/, exception.message)
               refute_match(/redhat_label/, exception.message)
             end
+          end
+
+          it "can validate Red Hat repositories based on their cp_id" do
+            cv = katello_content_views(:acme_default)
+            cvv = cv.versions.last
+            metadata = { content_view: cv.slice(:name, :label, :description),
+                         content_view_version: { major: cvv.major + 10, minor: cvv.minor },
+                         products: {
+                           "prod" => { name: "prod", cp_id: '83'},
+                           "redhat_label" => { name: 'Red Hat Linux', cp_id: '69'}
+                         },
+                         gpg_keys: {},
+                         repositories: {
+                           "misc-24037": { label: "misc",
+                                           product: {cp_id: '83'},
+                                           "redhat": true,
+                                           content: { id: 1, label: 'rhel-7-server'}
+                                         },
+                           "rhel-7": { label: "rhel_7",
+                                       product: {cp_id: '69'},
+                                       "redhat": true,
+                                       content: { id: 1, label: 'rhel-7-server'}
+                            }
+                         }
+            }
+
+            exception = assert_raises(RuntimeError) do
+              validator(content_view: cvv.content_view, metadata: metadata).ensure_redhat_products_metadata_are_in_the_library!
+            end
+
+            assert_match(/The organization's manifest does not contain the subscriptions required to enable the following repositories./, exception.message)
+            assert_match(/prod/, exception.message)
+            refute_match(/redhat_label/, exception.message)
           end
         end
       end

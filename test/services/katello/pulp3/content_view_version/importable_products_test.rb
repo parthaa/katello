@@ -11,31 +11,19 @@ module Katello
             new_prod_1 = "New-Prod-1"
             new_prod_2 = "New-Prod-2"
             gpg_key = katello_gpg_keys(:fedora_gpg_key)
-            metadata = {
-              products: {
-                new_prod_1 => { label: new_prod_1, name: new_prod_1, gpg_key: { name: gpg_key.name }},
-                new_prod_2 => { label: new_prod_2, name: new_prod_2, gpg_key: { name: gpg_key.name }},
-                repo.product.label => repo.product.slice(:name, :label)
-              },
-              gpg_keys: { gpg_key => gpg_key.slice(:name, :content) },
-              repositories: {
-                "misc-24037": { "label": repo.label,
-                                "product": { label: repo.product.label },
-                                "redhat": repo.redhat?
-                              },
-                "hoo-24037": { "label": repo.label,
-                               "product": { label: new_prod_1 },
-                               "redhat": false
-                             },
-                "hah-24037": { "label": repo.label,
-                               "product": { label: new_prod_2 },
-                               "redhat": false
-                             }
-              }
-            }.with_indifferent_access
-            helper = Katello::Pulp3::ContentViewVersion::ImportableProducts.
-                      new(organization: repo.organization, metadata: metadata)
+
+            metadata_products = [
+              stub(label: new_prod_1, name: new_prod_1, description: 'fake', redhat: false, gpg_key: stub(name: gpg_key.name)),
+              stub(label: new_prod_2, name: new_prod_2, description: 'fake', redhat: false, gpg_key: stub(name: gpg_key.name)),
+              stub(label: repo.product.label, name: repo.product.name, redhat: false, gpg_key: nil)
+            ]
+
+            helper = Katello::Pulp3::ContentViewVersion::ImportableProducts.new(
+              organization: repo.organization,
+              metadata_products: metadata_products
+            )
             helper.generate!
+
             assert_includes helper.creatable.map { |prod| prod[:product].label }, new_prod_1
             assert_includes helper.creatable.map { |prod| prod[:product].label }, new_prod_2
             refute_includes helper.creatable.map { |prod| prod[:product].label }, repo.product.label

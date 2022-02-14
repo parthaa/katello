@@ -2,10 +2,10 @@ module Actions
   module Katello
     module ContentViewVersion
       class AutoCreateRedhatRepositories < Actions::Base
-        def plan(organization:, metadata:)
+        def plan(organization:, metadata_repositories:)
           helper = ::Katello::Pulp3::ContentViewVersion::ImportableRepositories.
                       new(organization: organization,
-                      metadata: metadata, redhat: true)
+                      metadata_repositories: metadata_repositories, redhat: true)
           helper.generate!
           sequence do
             helper.creatable.each do |root|

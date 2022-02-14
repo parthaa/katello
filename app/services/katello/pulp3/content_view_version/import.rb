@@ -4,11 +4,12 @@ module Katello
       class Import
         include ImportExportCommon
 
-        def initialize(smart_proxy:, content_view_version: nil, path: nil, metadata: nil)
+        def initialize(smart_proxy:, content_view_version: nil, path: nil, metadata: nil, metadata_map: nil)
           @smart_proxy = smart_proxy
           @content_view_version = content_view_version
           @path = path
           @metadata = metadata
+          @metadata_map = metadata_map
         end
 
         def repository_mapping
@@ -43,48 +44,25 @@ module Katello
           api.importer_api.delete(importer_href)
         end
 
-        def self.check!(content_view:, metadata:, path:, smart_proxy:)
+        def self.check!(content_view:, metadata: nil, metadata_map: nil, path:, smart_proxy:)
           ImportValidator.new(smart_proxy: smart_proxy,
                                content_view: content_view,
                                metadata: metadata,
+                               metadata_map: metadata_map,
                                path: path).check!
         end
 
-        def self.create_or_update_gpg!(organization:, params:)
-          return if params.blank?
-          gpg = organization.gpg_keys.find_by(:name => params[:name])
-          if gpg
-            gpg.update!(params.except(:name))
-          else
-            gpg = organization.gpg_keys.create!(params)
-          end
-          gpg
-        end
-
-        def self.metadata_map(metadata, product_only: false, custom_only: false, redhat_only: false)
-          # Create a map that looks like -> {[product, repo]: {name: 'Foo Repo', label:.....}}
-          # these values should be curated from the metadata.
-          metadata_map = {}
-          metadata[:repositories].values.each do |repo|
-            next if (custom_only && repo[:redhat]) || (redhat_only && !repo[:redhat])
-            if product_only
-              metadata_map[repo[:product][:label]] = repo[:product]
-            else
-              metadata_map[[repo[:product][:label], repo[:label]]] = repo
-            end
-          end
-          metadata_map
-        end
-
-        def self.intersecting_repos_library_and_metadata(organization:, metadata:)
+        def self.intersecting_repos_library_and_metadata(organization:, metadata_repositories:)
           # Returns repositories in library that are part of the metadata
           # In other words if metadata had repos {label:foo, product: bar}
           # this would match it to the repo with the label foo and product bar
           # in the library.
-          queries = metadata_map(metadata).keys.map do |product_label, repo_label|
+
+          # TODO: this query needs to account for cp_id now
+          queries = metadata_repositories.map do |repo|
             repositories_in_library(organization).
-                        where("#{Katello::Product.table_name}.label": product_label,
-                              "#{Katello::RootRepository.table_name}.label": repo_label)
+                        where("#{Katello::Product.table_name}.label": repo.product.label,
+                              "#{Katello::RootRepository.table_name}.label": repo.label)
           end
           queries.inject(&:or)
         end
@@ -98,7 +76,7 @@ module Katello
                     where("#{::Katello::ContentView.table_name}.organization_id": organization)
         end
 
-        def self.reset_content_view_repositories_from_metadata!(content_view:, metadata:)
+        def self.reset_content_view_repositories_from_metadata!(content_view:, metadata_repositories:)
           # Given metadata from the dump and a content view
           # this method
           # 1) Fetches ids of the library repos whose product name, repo name amd redhat?
@@ -108,7 +86,7 @@ module Katello
           # The main intent of this method is to assume that the user intends for the
           # content view to exaclty look like what is specified in metadata
           repo_ids = intersecting_repos_library_and_metadata(organization: content_view.organization,
-                                                             metadata: metadata).
+                                                             metadata_repositories: metadata_repositories).
                                                              pluck("#{Katello::Repository.table_name}.id")
           content_view.update!(repository_ids: repo_ids)
         end
@@ -123,18 +101,20 @@ module Katello
           end
         end
 
-        def self.process_metadata(metadata:)
-          fail _("Content View label not provided.") if metadata[:label].blank?
-          if metadata[:generated_for].blank?
-            metadata[:generated_for] = if metadata[:label].start_with? ::Katello::ContentView::EXPORT_LIBRARY
-                                         "library_export"
-                                       else
-                                         "none"
-                                       end
-          end
-          generated_for = metadata[:generated_for].to_sym
+        def self.process_metadata(metadata_content_view:)
+          fail _("Content View label not provided.") if metadata_content_view.label.blank?
 
-          return metadata if metadata[:generated_for] == :none
+          if metadata_content_view.generated_for.blank?
+            generated_for = if metadata_content_view.label.start_with? ::Katello::ContentView::EXPORT_LIBRARY
+                               :library_export
+                             else
+                               :none
+                             end
+          else
+            generated_for = metadata_content_view.generated_for.to_sym
+          end
+
+          return metadata_content_view.to_h.merge(generated_for: :none) if generated_for == :none
 
           if generated_for == :library_export
             generated_for = :library_import
@@ -149,8 +129,8 @@ module Katello
           }
         end
 
-        def self.find_or_create_import_view(organization:, metadata:)
-          metadata = process_metadata(metadata: metadata)
+        def self.find_or_create_import_view(organization:, metadata_content_view:)
+          metadata = process_metadata(metadata_content_view: metadata_content_view)
           cv = ::Katello::ContentView.find_by(label: metadata[:label],
                                               organization: organization)
           if cv.blank?

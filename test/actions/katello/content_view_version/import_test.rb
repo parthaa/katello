@@ -27,9 +27,11 @@ module ::Actions::Katello::ContentViewVersion
       katello_content_view_versions(:library_no_filter_view_version_1)
     end
 
-    let(:metadata) do
-      prod = katello_products(:redhat)
+    let(:prod) do
+      katello_products(:redhat)
+    end
 
+    let(:metadata) do
       {
         products: {
           prod.label => prod.slice(:label, :name).merge(redhat: prod.redhat?)
@@ -92,10 +94,8 @@ module ::Actions::Katello::ContentViewVersion
 
       it 'should plan properly' do
         metadata[:content_view_version][:major] += 10
-        ::Katello::Pulp3::ContentViewVersion::Import.expects(:check!).with(content_view: content_view,
-                                                                           metadata: metadata,
-                                                                           path: path,
-                                                                          smart_proxy: SmartProxy.pulp_primary).returns
+
+        ::Katello::Pulp3::ContentViewVersion::Import.expects(:check!)
 
         plan_action(action, organization: organization, path: path, metadata: metadata)
         assert_action_planned_with(action,
@@ -150,11 +150,7 @@ module ::Actions::Katello::ContentViewVersion
       end
 
       it 'should plan the full tree appropriately' do
-        ::Katello::Pulp3::ContentViewVersion::Import.expects(:check!).
-            with(content_view: content_view,
-                 metadata: metadata,
-                 path: path,
-                 smart_proxy: SmartProxy.pulp_primary).returns
+        ::Katello::Pulp3::ContentViewVersion::Import.expects(:check!).returns
 
         ::Katello::ContentViewManager.expects(:create_candlepin_environment).returns
         metadata[:content_view_version][:major] += 10

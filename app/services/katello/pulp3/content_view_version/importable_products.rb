@@ -2,19 +2,14 @@ module Katello
   module Pulp3
     module ContentViewVersion
       class ImportableProducts
-        attr_accessor :creatable, :updatable, :organization, :metadata
+        attr_reader :creatable, :updatable
 
-        def initialize(organization:, metadata:)
-          self.organization = organization
-          self.metadata = metadata
-          self.creatable = []
-          self.updatable = []
-        end
-
-        def products_in_library
-          # Get the product labels in library
-          return @products_in_library unless @products_in_library.blank?
-          @products_in_library = Set.new(::Katello::Product.in_org(organization).custom.pluck(:label))
+        def initialize(organization:, metadata_products:)
+          @organization = organization
+          @metadata_products = metadata_products
+          @creatable = []
+          @updatable = []
+          @products_in_library = ::Katello::Product.in_org(@organization).custom
         end
 
         def generate!
@@ -23,23 +18,44 @@ module Katello
           #            They are ready to be created
           # updatable: products that are both in the metadata and library.
           #            These may contain updates to the product and hence ready to be updated.
-          metadata[:products].each do |product_label, params|
-            next if params[:redhat]
-            if params[:gpg_key].blank?
-              params[:gpg_key_id] = nil
-            else
-              params[:gpg_key_id] = organization.gpg_keys.find_by(name: params[:gpg_key][:name]).id
-            end
-            params = params.except(:gpg_key, :redhat)
-            if products_in_library.include? product_label
+          @metadata_products.each do |product|
+            next if product.redhat
+
+            # TODO: needs to look @ cp_id
+            library_product = @products_in_library.find { |p| p.label == product.label }
+            if library_product
               # add to the update list if product is already available
-              product = ::Katello::Product.in_org(organization).find_by(label: product_label)
-              updatable << { product: product, options: params.except(:name, :label) }
+              #updatable << { product: product, options: params.except(:name, :label) }
+              updatable << { product: library_product, options: update_params(product) }
             else
               # add to the create list if its  a new product
-              creatable << { product: ::Katello::Product.new(params) }
+              creatable << { product: ::Katello::Product.new(create_params(product)) }
             end
           end
+        end
+
+        private
+
+        UPDATE_FIELDS = [
+          :description
+        ].freeze
+
+        def create_params(metadata_product)
+          {
+            gpg_key_id: metadata_product.gpg_key ? @organization.gpg_keys.where(name: metadata_product.gpg_key.name).pluck(:id).first : nil,
+            name: metadata_product.name,
+            label: metadata_product.label,
+            description: metadata_product.description
+          }
+        end
+
+        def update_params(metadata_product)
+          # no redhat, name, label
+          params = {
+            gpg_key_id: metadata_product.gpg_key ? @organization.gpg_keys.where(name: metadata_product.gpg_key.name).pluck(:id).first : nil
+          }
+
+          params
         end
       end
     end
