@@ -104,15 +104,11 @@ module Katello
         end
 
         def gpg_key_for_repo(repo)
-          @gpg_keys.find { |g| g.name == repo[:gpg_key][:name] } if repo[:gpg_key]
+          @gpg_keys.find { |g| g.name == repo[:gpg_key][:name] } if repo[:gpg_key].present?
         end
 
         def product_for_repo(repo)
-          if repo[:cp_id]
-            @products.find { |p| p.cp_id == repo[:cp_id] }
-          else
-            @products.find { |p| p.label == repo[:product][:label] }
-          end
+          @products.find { |p| p.label == repo[:product][:label] }
         end
       end
     end

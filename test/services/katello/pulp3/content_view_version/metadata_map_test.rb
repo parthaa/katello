@@ -10,12 +10,14 @@ module Katello
           def test_parse_metadata_pre_cp_id
             # original export metadata without cp_id on products
 
-            metadata = File.read(File.open(Katello::Engine.root.join('test/fixtures/import-export/metadata.json')))
+            metadata = File.read(File.open(Katello::Engine.root.join('test/fixtures/import-export/metadata_complete_library.json')))
             metadata_hash = JSON.parse(metadata).with_indifferent_access
 
             map = Katello::Pulp3::ContentViewVersion::MetadataMap.new(metadata: metadata_hash)
 
             assert map
+
+            # TODO: assert contents of the map
           end
 
           def test_parse_metadata_post_cp_id
