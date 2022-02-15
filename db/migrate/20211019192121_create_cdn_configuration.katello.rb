@@ -1,4 +1,9 @@
 class CreateCdnConfiguration < ActiveRecord::Migration[6.0]
+  class FakeCdnConfiguration < Katello::Model
+    self.table_name = 'katello_cdn_configurations'
+    self.inheritance_column = nil
+  end
+
   def up
     create_table :katello_cdn_configurations do |t|
       t.integer :organization_id
@@ -15,8 +20,8 @@ class CreateCdnConfiguration < ActiveRecord::Migration[6.0]
     add_foreign_key :katello_cdn_configurations, :katello_content_credentials, name: 'katello_cdn_configurations_ssl_ca_credential_id', column: :ssl_ca_credential_id
 
     ::Organization.all.each do |org|
-      Katello::CdnConfiguration.where(
-        organization: org,
+      FakeCdnConfiguration.where(
+        organization_id: org.id,
         url: org.redhat_provider.repository_url || ::Katello::Resources::CDN::CdnResource.redhat_cdn_url
       ).first_or_create!
     end
@@ -25,6 +30,7 @@ class CreateCdnConfiguration < ActiveRecord::Migration[6.0]
   end
 
   def down
+    add_column :katello_providers, :repository_url, :string
     drop_table :katello_cdn_configurations
   end
 end
