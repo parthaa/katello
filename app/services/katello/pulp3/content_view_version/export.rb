@@ -3,7 +3,18 @@ module Katello
     module ContentViewVersion
       class Export
         include ImportExportCommon
+        SYNCABLE = "syncable".freeze
+        IMPORTABLE = "hammer-importable".freeze
+        FORMATS = [SYNCABLE, IMPORTABLE].freeze
+
         attr_reader :smart_proxy, :content_view_version, :destination_server, :from_content_view_version
+        def self.create(options)
+          if options.delete(:format) == SYNCABLE
+            SyncableFormatExport.new(options)
+          else
+            self.new(options)
+          end
+        end
 
         def initialize(smart_proxy:,
                         content_view_version: nil,
@@ -46,9 +57,11 @@ module Katello
         end
 
         def create_exporter(export_base_dir: Setting['pulpcore_export_destination'])
-          api.exporter_api.create(name: generate_id(content_view_version),
-                                  path: "#{export_base_dir}/#{generate_exporter_path}",
-                                  repositories: repository_hrefs)
+          exporter_api = cdn_format ? api.yum_exporter_api : api.exporter_api
+          options = { name: generate_id(content_view_version), path: "#{export_base_dir}/#{generate_exporter_path}" }
+          options[:repositories] = repository_hrefs unless cdn_format
+
+          exporter_api.create(options)
         end
 
         def create_export(exporter_href, chunk_size: nil)
@@ -77,7 +90,8 @@ module Katello
             options[:start_versions] = start_versions
             options[:full] = 'false'
           end
-          [api.export_api.create(exporter_href, options)]
+          export_api = cdn_format ? api.yum_export_api : api.export_api
+          [export_api.create(exporter_href, options)]
         end
 
         def fetch_export(exporter_href)

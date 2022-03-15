@@ -5,10 +5,11 @@ module Actions
         input_format do
           param :smart_proxy_id, Integer
           param :exporter_data, Hash
+          param :format, String
         end
 
         def invoke_external_task
-          ::Katello::Pulp3::ContentViewVersion::Export.new(smart_proxy: smart_proxy).destroy_exporter(input[:exporter_data][:pulp_href])
+          ::Katello::Pulp3::ContentViewVersion::Export.create(smart_proxy: smart_proxy, format: input[:format]).destroy_exporter(input[:exporter_data][:pulp_href])
         end
       end
     end

@@ -63,10 +63,16 @@ module Katello
     param :id, :number, :desc => N_("Repository identifier"), :required => true
     param :chunk_size_gb, :number, :desc => N_("Split the exported content into archives "\
                                                "no greater than the specified size in gigabytes."), :required => false
+    param :format, ::Katello::Pulp3::ContentViewVersion::Export::FORMATS,
+                   :desc => N_("Export formats. Choose syncable if content is to be imported via repository sync. "\
+                               "Choose hammer-import if content is to be imported via hammer.
+                                Defaults to hammer-import."),
+                   :required => false
     def repository
       tasks = async_task(::Actions::Pulp3::Orchestration::ContentViewVersion::ExportRepository,
                           @repository,
-                          chunk_size: params[:chunk_size_gb])
+                          chunk_size: params[:chunk_size_gb],
+                          format: find_repository_export_format)
       respond_for_async :resource => tasks
     end
 
@@ -88,6 +94,18 @@ module Katello
       find_organization
       unless @organization.can_export_content?
         throw_resource_not_found(name: 'organization', id: params[:organization_id])
+      end
+    end
+
+    def find_repository_export_format
+      if params[:format]
+        if  !::Katello::Pulp3::ContentViewVersion::Export::FORMATS.include?(params[:format])
+          fail HttpErrors::UnprocessableEntity, _('Invalid Export Format provided. Format has to be one of  %s ') %
+                                            ::Katello::Pulp3::ContentViewVersion::Export::FORMATS.join(',')
+        end
+        params[:format]
+      else
+        ::Katello::Pulp3::ContentViewVersion::Export::IMPORTABLE
       end
     end
   end

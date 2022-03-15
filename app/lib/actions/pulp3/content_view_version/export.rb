@@ -7,15 +7,17 @@ module Actions
           param :from_content_view_version_id, Integer
           param :smart_proxy_id, Integer
           param :exporter_data, Hash
+          param :format, String
           param :chunk_size, Integer
         end
 
         def invoke_external_task
           cvv = ::Katello::ContentViewVersion.find(input[:content_view_version_id])
           from_cvv = ::Katello::ContentViewVersion.find(input[:from_content_view_version_id]) unless input[:from_content_view_version_id].blank?
-          ::Katello::Pulp3::ContentViewVersion::Export.new(smart_proxy: smart_proxy,
+          ::Katello::Pulp3::ContentViewVersion::Export.create(smart_proxy: smart_proxy,
                                                    content_view_version: cvv,
-                                                   from_content_view_version: from_cvv)
+                                                   from_content_view_version: from_cvv,
+                                                   format: input[:format])
                                                    .create_export(input[:exporter_data][:pulp_href],
                                                                         chunk_size: input[:chunk_size])
         end
