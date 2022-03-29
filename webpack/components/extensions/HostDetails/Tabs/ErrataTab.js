@@ -317,6 +317,7 @@ export const ErrataTab = () => {
             toggleGroup,
           }
           }
+          ouiaId="host-errata-table"
           additionalListeners={[
             hostId, toggleGroupState, errataTypeSelected, errataSeveritySelected]}
           fetchItems={fetchItems}

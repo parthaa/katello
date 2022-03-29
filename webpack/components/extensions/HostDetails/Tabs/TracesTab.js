@@ -129,6 +129,7 @@ const TracesTab = () => {
           actionButtons,
         }
         }
+        ouiaId="host-traces-table"
         metadata={meta}
         autocompleteEndpoint={`/hosts/${hostId}/traces/auto_complete_search`}
         foremanApiAutoComplete

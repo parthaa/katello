@@ -118,6 +118,7 @@ export const PackagesTab = () => {
             toggleGroup,
           }
           }
+          ouiaId="host-packages-table"
           additionalListeners={[hostId, packageStatusSelected]}
           fetchItems={fetchItems}
           autocompleteEndpoint={`/hosts/${hostId}/packages/auto_complete_search`}

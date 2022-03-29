@@ -248,6 +248,7 @@ const ContentViewVersions = ({ cvId, details }) => {
       }}
       actionResolver={hasPermission(permissions, 'promote_or_remove_content_views') ? actionResolver : null}
       cells={columnHeaders}
+      ouiaId="content-view-versions-table"
       variant={TableVariant.compact}
       autocompleteEndpoint={`/content_view_versions/auto_complete_search?content_view_id=${cvId}`}
       fetchItems={useCallback(params => getContentViewVersions(cvId, params), [cvId])}
