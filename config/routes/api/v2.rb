@@ -122,6 +122,7 @@ Katello::Engine.routes.draw do
           collection do
             post :version
             post :library
+            post :repository
             get :index
           end
         end
@@ -132,6 +133,7 @@ Katello::Engine.routes.draw do
           collection do
             post :version
             post :library
+            post :repository
           end
         end
 
@@ -151,6 +153,7 @@ Katello::Engine.routes.draw do
           collection do
             post :version
             post :library
+            post :repository
           end
         end
 

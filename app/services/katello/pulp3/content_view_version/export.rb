@@ -46,7 +46,7 @@ module Katello
         end
 
         def create_exporter(export_base_dir: Setting['pulpcore_export_destination'])
-          api.exporter_api.create(name: generate_id,
+          api.exporter_api.create(name: generate_id(content_view_version),
                                   path: "#{export_base_dir}/#{generate_exporter_path}",
                                   repositories: repository_hrefs)
         end
@@ -150,13 +150,35 @@ module Katello
           MetadataGenerator.new(export_service: self).generate!
         end
 
+        def self.find_generated_export_view(create_by_default: false,
+                                            destination_server:,
+                                            organization:,
+                                            name:,
+                                            generated_for:)
+          name += "-#{destination_server}" unless destination_server.blank?
+          select_method = create_by_default ? :first_or_create : :first
+          ::Katello::ContentView.where(name: name,
+                                       organization: organization,
+                                       generated_for: generated_for).send(select_method)
+        end
+
         def self.find_library_export_view(create_by_default: false,
                                           destination_server:,
                                           organization:)
-          name = ::Katello::ContentView::EXPORT_LIBRARY
-          name += "-#{destination_server}" unless destination_server.blank?
-          select_method = create_by_default ? :first_or_create : :first
-          ::Katello::ContentView.where(name: name, organization: organization).send(select_method)
+          find_generated_export_view(create_by_default: create_by_default,
+                                     destination_server: destination_server,
+                                     organization: organization,
+                                     name: ::Katello::ContentView::EXPORT_LIBRARY,
+                                     generated_for: :library_export)
+        end
+
+        def self.find_repository_export_view(create_by_default: false,
+                                              repository:)
+          find_generated_export_view(create_by_default: create_by_default,
+                                     destination_server: nil,
+                                     organization: repository.organization,
+                                     name: "Export-#{repository.label}-#{repository.library_instance_or_self.id}",
+                                     generated_for: :repository_export)
         end
 
         def self.generate_product_repo_strings(repositories:)

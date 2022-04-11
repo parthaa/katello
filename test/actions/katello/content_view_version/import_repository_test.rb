@@ -22,31 +22,18 @@ module ::Actions::Katello::ContentViewVersion
       organization.default_content_view_version
     end
 
-    let(:repo) do
-      organization.repositories.redhat.first
-    end
-
-    let(:prod) do
-      repo.product
-    end
-
     let(:metadata) do
+      prod = katello_products(:redhat)
+
       {
         products: {
           prod.label => prod.slice(:name, :label).merge(redhat: prod.redhat?)
         },
         gpg_keys: {},
         repositories: {
-          "misc-24037" => { label: repo.label,
-                            name: repo.name,
-                            mirroring_policy: repo.mirroring_policy,
+          "misc-24037" => { label: prod.repositories.first.label,
                             product: prod.slice(:label),
-                            redhat: prod.redhat?,
-                            arch: 'noarch',
-                            unprotected: false,
-                            content_type: 'yum',
-                            download_policy: 'immediate',
-                            content: { id: 1, label: 'misc-24037' }
+                            redhat: prod.redhat?
           }
         },
         content_view_version: {
@@ -54,11 +41,12 @@ module ::Actions::Katello::ContentViewVersion
           minor: '0'
         },
         content_view: {
-          name: ::Katello::ContentView::EXPORT_LIBRARY,
-          label: ::Katello::ContentView::EXPORT_LIBRARY,
+          name: "Export-Repository",
+          label: 'Export-Repository',
           description: 'great',
-          generated_for: :library_export
-        }
+          generated_for: :repository_export
+        },
+        destination_server: "wow"
       }.with_indifferent_access
     end
 
@@ -84,10 +72,8 @@ module ::Actions::Katello::ContentViewVersion
       ::Katello::Repository.any_instance.stubs(:pulp_scratchpad_checksum_type).returns(nil)
     end
 
-    describe 'Import Default' do
+    describe 'Import Repository' do
       it 'should plan properly' do
-        assert_nil ::Katello::ContentView.where(organization: organization,
-                                                name: ::Katello::ContentView::IMPORT_LIBRARY).first
         action_class.any_instance.expects(:action_subject).with(organization)
         plan_action(action, organization, path: path, metadata: metadata)
         assert_action_planned_with(action, ::Actions::Katello::ContentViewVersion::Import) do |options|
@@ -99,11 +85,10 @@ module ::Actions::Katello::ContentViewVersion
       end
 
       it 'should plan the full tree appropriately' do
-        ::Katello::ContentViewManager.expects(:create_candlepin_environment).returns
         ::Katello::Pulp3::ContentViewVersion::Import.any_instance.expects(:check!).returns
+        ::Katello::ContentViewManager.expects(:create_candlepin_environment).returns
 
         tree = plan_action_tree(action_class, organization, path: path, metadata: metadata)
-
         assert_empty tree.errors
         assert_tree_planned_with(tree, Actions::Pulp3::Repository::CopyContent) do |input|
           assert input[:copy_all]
