@@ -239,6 +239,8 @@ const TableWrapper = ({
 };
 
 TableWrapper.propTypes = {
+  // ouiaId is needed on all tables for automation testing
+  ouiaId: PropTypes.string.isRequired,
   searchQuery: PropTypes.string.isRequired,
   updateSearchQuery: PropTypes.func.isRequired,
   fetchItems: PropTypes.func.isRequired,

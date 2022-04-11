@@ -224,6 +224,7 @@ const ContentViewTable = () => {
       additionalListeners={[isPublishModalOpen, sortByIndex, direction]}
       sortBy={sortBy}
       onSort={onSort}
+      ouiaId="content-views-table"
       bookmarkController="katello_content_views"
       variant={TableVariant.compact}
       status={cvTableStatus}

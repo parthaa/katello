@@ -257,6 +257,7 @@ const RepositorySetsTab = () => {
             toggleGroup,
           }
           }
+          ouiaId="host-repository-sets-table"
           activeFilters={[toggleGroupState]}
           defaultFilters={[defaultToggleGroupState]}
           additionalListeners={[hostId, toggleGroupState]}
