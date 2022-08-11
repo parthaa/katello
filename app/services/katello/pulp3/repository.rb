@@ -418,23 +418,24 @@ module Katello
       end
 
       def ssl_remote_options
+        proxy_ca = root.http_proxy&.cacert || ""
         if root.redhat? && root.cdn_configuration.redhat_cdn?
           {
             client_cert: root.product.certificate,
             client_key: root.product.key,
-            ca_cert: Katello::Repository.feed_ca_cert(root.url)
+            ca_cert: Katello::Repository.feed_ca_cert(root.url) + proxy_ca
           }
         elsif root.redhat? && root.cdn_configuration.network_sync?
           {
             client_cert: root.cdn_configuration.ssl_cert,
             client_key: root.cdn_configuration.ssl_key,
-            ca_cert: root.cdn_configuration.ssl_ca
+            ca_cert: "#{root.cdn_configuration.ssl_ca} #{proxy_ca}"
           }
         elsif root.custom?
           {
             client_cert: root.ssl_client_cert&.content,
             client_key: root.ssl_client_key&.content,
-            ca_cert: root.ssl_ca_cert&.content
+            ca_cert:  "#{root.ssl_ca_cert&.content} #{proxy_ca}"
           }
         else
           {}

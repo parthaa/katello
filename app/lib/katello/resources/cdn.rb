@@ -41,14 +41,11 @@ module Katello
                                     :ssl_ca_cert)
 
           if options[:ssl_ca_cert].present?
-            begin
-              ca_cert = OpenSSL::X509::Certificate.new(options[:ssl_ca_cert])
-            rescue
-              raise _("Invalid SSL CA certificate given for CDN")
-            end
-
             @cert_store = OpenSSL::X509::Store.new
-            @cert_store.add_cert(ca_cert)
+            Foreman::Util.add_ca_bundle_to_store(options[:ssl_ca_cert], @cert_store)
+          elsif options[:ssl_ca_file]
+            @cert_store = OpenSSL::X509::Store.new
+            @cert_store.add_file(options[:ssl_ca_file])
           end
 
           @url = url
@@ -93,7 +90,6 @@ module Katello
           if @uri.is_a?(URI::HTTPS)
             net.cert = @options[:ssl_client_cert]
             net.key = @options[:ssl_client_key]
-            net.ca_file = @options[:ssl_ca_file]
             net.cert_store = @cert_store
           end
 
