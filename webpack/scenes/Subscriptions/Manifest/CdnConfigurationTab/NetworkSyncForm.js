@@ -29,7 +29,7 @@ import { updateCdnConfiguration } from '../../../Organizations/OrganizationActio
 import './CdnConfigurationForm.scss';
 
 const NetworkSyncForm = ({
-  showUpdate, contentCredentials, cdnConfiguration, onUpdate,
+  typeChangeInProgress, contentCredentials, cdnConfiguration, onUpdate,
 }) => {
   const dispatch = useDispatch();
   const urlValue = cdnConfiguration.type === NETWORK_SYNC ? cdnConfiguration.url : '';
@@ -49,19 +49,6 @@ const NetworkSyncForm = ({
     useState(cdnConfiguration.upstream_lifecycle_environment_label ||
       DEFAULT_LIFECYCLE_ENVIRONMENT_LABEL);
 
-  const [updateEnabled, setUpdateEnabled] = useState(false);
-
-  const firstUpdate = useRef(true);
-  useEffect(() => {
-    if (firstUpdate.current) {
-      firstUpdate.current = false;
-      return;
-    }
-    setUpdateEnabled(true);
-  }, [url, username, password, organizationLabel,
-    contentViewLabel, lifecycleEnvironmentLabel,
-    sslCaCredentialId, cdnConfiguration]);
-
   const editPassword = (value) => {
     if (value === null) {
       setPassword('');
@@ -79,10 +66,30 @@ const NetworkSyncForm = ({
   }
 
   const validated = !requiredFields.some(field => !field);
-  const onError = () => setUpdateEnabled(true);
+
+  const disableUpdate = () => {
+    let disable = !typeChangeInProgress;
+    if (url && url !== cdnConfiguration.url) {
+      disable = false;
+    }
+    const sslCaCredentialIdOrNull = sslCaCredentialId === '' ? null : sslCaCredentialId;
+    if (sslCaCredentialIdOrNull !== cdnConfiguration.ssl_ca_credential_id) {
+      disable = false;
+    }
+
+    if (updatingCdnConfiguration) {
+      disable = true;
+    }
+
+    if (!validated) {
+      disable = true;
+    }
+    return disable;
+  }
+
+  const sslCaCredentialValue = cdnConfiguration.type === NETWORK_SYNC ? sslCaCredentialId : null;
 
   const performUpdate = () => {
-    setUpdateEnabled(false);
     dispatch(updateCdnConfiguration({
       url,
       username,
@@ -93,7 +100,7 @@ const NetworkSyncForm = ({
       upstream_lifecycle_environment_label: lifecycleEnvironmentLabel ||
       DEFAULT_LIFECYCLE_ENVIRONMENT_LABEL,
       type: NETWORK_SYNC,
-    }, onUpdate, onError));
+    }, onUpdate));
   };
 
   return (
@@ -120,7 +127,7 @@ const NetworkSyncForm = ({
               }}
             />
             <br />
-            {showUpdate &&
+            {typeChangeInProgress &&
             <FormattedMessage
               id="cdn-configuration-type-upstream-server"
               defaultMessage={__('Provide the required information and click {update} below to save changes.')}
@@ -215,7 +222,7 @@ const NetworkSyncForm = ({
           <FormSelect
             ouiaId="network-sync-ca-content-credential-input"
             aria-label="cdn-ssl-ca-content-credential"
-            value={sslCaCredentialId || ''}
+            value={sslCaCredentialValue || ''}
             isDisabled={updatingCdnConfiguration}
             onChange={value => setSslCaCredentialId(value)}
           >
@@ -231,7 +238,7 @@ const NetworkSyncForm = ({
             aria-label="update-upstream-configuration"
             variant="secondary"
             onClick={performUpdate}
-            isDisabled={updatingCdnConfiguration || !validated || !updateEnabled}
+            isDisabled={disableUpdate()}
             isLoading={updatingCdnConfiguration}
           >
             {__('Update')}
@@ -243,7 +250,7 @@ const NetworkSyncForm = ({
 };
 
 NetworkSyncForm.propTypes = {
-  showUpdate: PropTypes.bool.isRequired,
+  typeChangeInProgress: PropTypes.bool.isRequired,
   contentCredentials: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.number,
     name: PropTypes.string,

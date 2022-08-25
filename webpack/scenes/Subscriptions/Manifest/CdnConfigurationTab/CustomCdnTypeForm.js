@@ -23,35 +23,39 @@ import {
 import './CdnConfigurationForm.scss';
 
 const CustomCdnTypeForm = ({
-  showUpdate, onUpdate, contentCredentials, cdnConfiguration,
+  typeChangeInProgress, onUpdate, contentCredentials, cdnConfiguration,
 }) => {
   const dispatch = useDispatch();
   const urlValue = cdnConfiguration.type === CUSTOM_CDN ? cdnConfiguration.url : '';
   const [url, setUrl] = useState(urlValue);
-  const [updateEnabled, setUpdateEnabled] = useState(showUpdate);
   const updatingCdnConfiguration = useSelector(state => selectUpdatingCdnConfiguration(state));
-  const firstUpdate = useRef(true);
   const [sslCaCredentialId, setSslCaCredentialId] = useState(cdnConfiguration.ssl_ca_credential_id);
 
-  useEffect(() => {
-    if (firstUpdate.current) {
-      firstUpdate.current = false;
-      return;
+  const disableUpdate = () => {
+    let disable = !typeChangeInProgress;
+    if (url && url !== cdnConfiguration.url) {
+      disable = false;
     }
-    setUpdateEnabled(true);
-  }, [sslCaCredentialId, cdnConfiguration]);
+    const sslCaCredentialIdOrNull = sslCaCredentialId === '' ? null : sslCaCredentialId;
+    if (sslCaCredentialIdOrNull !== cdnConfiguration.ssl_ca_credential_id) {
+      disable = false;
+    }
 
-  const onError = () => setUpdateEnabled(true);
+    if (updatingCdnConfiguration) {
+      disable = true;
+    }
+    return disable;
+  }
 
   const performUpdate = () => {
-    setUpdateEnabled(false);
     dispatch(updateCdnConfiguration({
       url,
       ssl_ca_credential_id: sslCaCredentialId,
       type: CUSTOM_CDN,
-    }, onUpdate, onError));
+    }, onUpdate));
   };
 
+  const sslCaCredentialValue = cdnConfiguration.type === CUSTOM_CDN ? sslCaCredentialId : null;
 
   return (
     <Form isHorizontal>
@@ -59,13 +63,13 @@ const CustomCdnTypeForm = ({
         <Text>
           <FormattedMessage
             id="cdn-configuration-type"
-            defaultMessage={__('Red Hat content will be consumed from the {type}.')}
+            defaultMessage={__('Red Hat content will be consumed from {type}.')}
             values={{
-              type: <strong>{__('Custom CDN Url')}</strong>,
+              type: <strong>{__('a custom CDN URL')}</strong>,
             }}
           />
           <br />
-          {showUpdate &&
+          {typeChangeInProgress &&
           <FormattedMessage
             id="cdn-configuration-type-cdn"
             defaultMessage={__('Click {update} below to save changes.')}
@@ -97,7 +101,7 @@ const CustomCdnTypeForm = ({
         <FormSelect
           ouiaId="custom-cdn-ca-content-credential-input"
           aria-label="cdn-ssl-ca-content-credential"
-          value={sslCaCredentialId || ''}
+          value={sslCaCredentialValue || ''}
           isDisabled={updatingCdnConfiguration}
           onChange={value => setSslCaCredentialId(value)}
         >
@@ -113,7 +117,7 @@ const CustomCdnTypeForm = ({
           aria-label="update-custom-cdn-configuration"
           variant="secondary"
           onClick={performUpdate}
-          isDisabled={updatingCdnConfiguration || !updateEnabled || !url}
+          isDisabled={disableUpdate()}
           isLoading={updatingCdnConfiguration}
         >
           {__('Update')}
@@ -125,7 +129,7 @@ const CustomCdnTypeForm = ({
 };
 
 CustomCdnTypeForm.propTypes = {
-  showUpdate: PropTypes.bool.isRequired,
+  typeChangeInProgress: PropTypes.bool.isRequired,
   onUpdate: PropTypes.func,
   contentCredentials: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.number,

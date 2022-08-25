@@ -20,9 +20,9 @@ import {
 } from '../../../Organizations/OrganizationSelectors';
 import './CdnConfigurationForm.scss';
 
-const CdnTypeForm = ({ showUpdate, onUpdate }) => {
+const CdnTypeForm = ({ typeChangeInProgress, onUpdate }) => {
   const dispatch = useDispatch();
-  const [updateEnabled, setUpdateEnabled] = useState(showUpdate);
+  const [updateEnabled, setUpdateEnabled] = useState(typeChangeInProgress);
   const updatingCdnConfiguration = useSelector(state => selectUpdatingCdnConfiguration(state));
   const performUpdate = () => {
     setUpdateEnabled(false);
@@ -43,7 +43,7 @@ const CdnTypeForm = ({ showUpdate, onUpdate }) => {
             }}
           />
           <br />
-          {showUpdate &&
+          {typeChangeInProgress &&
           <FormattedMessage
             id="cdn-configuration-type-cdn"
             defaultMessage={__('Click {update} below to save changes.')}
@@ -82,7 +82,7 @@ const CdnTypeForm = ({ showUpdate, onUpdate }) => {
 };
 
 CdnTypeForm.propTypes = {
-  showUpdate: PropTypes.bool.isRequired,
+  typeChangeInProgress: PropTypes.bool.isRequired,
   onUpdate: PropTypes.func,
 };
 
