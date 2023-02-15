@@ -119,7 +119,7 @@ module Katello
         end
       else
         @history = ::Katello::ContentViewVersionExportHistory.
-                      latest(@view, destination_server: params[:destination_server])
+                      latest(@view, destination_server: params[:destination_server], since: params[:since])
         if @history.blank?
           msg = _("No existing export history was found to perform an incremental export. A full export must be performed")
           fail HttpErrors::NotFound, msg

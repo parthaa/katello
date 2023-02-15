@@ -38,9 +38,11 @@ module Katello
     scoped_search :on => :id, :only_explicit => true, :validator => ScopedSearch::Validators::INTEGER
     scoped_search :on => :export_type, :rename => :type, :complete_value => EXPORT_TYPES
 
-    def self.latest(content_view, destination_server: nil)
-      where(content_view_version: content_view.versions,
-            destination_server: destination_server).order(:created_at).last
+    def self.latest(content_view, destination_server: nil, since: nil)
+      query = where(content_view_version: content_view.versions,
+                    destination_server: destination_server)
+      query = query.where("created_at < ?", DateTime.parse(since)) unless since.blank?
+      query.order(created_at: :desc).limit(1).first
     end
 
     def self.export_type_from_metadata(metadata)
