@@ -150,11 +150,14 @@ module Katello
     param :upstream_content_view_label, String, :desc => N_("Upstream Content View Label, default: Default_Organization_View. Relevant only for 'upstream_server' type.")
     param :upstream_lifecycle_environment_label, String, :desc => N_("Upstream Lifecycle Environment, default: Library. Relevant only for 'upstream_server' type.")
     param :ssl_ca_credential_id, Integer, :desc => N_("Content Credential to use for SSL CA. Relevant only for 'upstream_server' type.")
+    param :cdn_auth_enabled, :bool, :desc => N_("In the case of a custom_cdn set to true"\
+                                                " if the product certificate and key needs to be included while connecting "\
+                                                " to the CDN. Relevant only for mirrors.")
     def cdn_configuration
       config_keys = [:url, :username, :password, :upstream_organization_label, :ssl_ca_credential_id, :type,
-                     :upstream_lifecycle_environment_label, :upstream_content_view_label]
+                     :upstream_lifecycle_environment_label, :upstream_content_view_label, :cdn_auth_enabled]
       config_params = params.slice(*config_keys).permit!.to_h
-
+      config_params[:cdn_auth_enabled] = Foreman::Cast.to_bool(config_params[:cdn_auth_enabled]) if params.key? :cdn_auth_enabled
       task = sync_task(::Actions::Katello::CdnConfiguration::Update, @organization.cdn_configuration, config_params)
 
       respond_for_async :resource => task

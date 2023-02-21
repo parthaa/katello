@@ -39,9 +39,10 @@ module Katello
                                     :password,
                                     :organization_label,
                                     :ssl_ca_cert,
-                                    :custom_cdn)
-
-          if options[:ssl_ca_cert].present?
+                                    :ssl_cert_store)
+          if options[:ssl_cert_store].present?
+            @cert_store = options.delete(:ssl_cert_store)
+          elsif options[:ssl_ca_cert].present?
             @cert_store = OpenSSL::X509::Store.new
             Foreman::Util.add_ca_bundle_to_store(options[:ssl_ca_cert], @cert_store)
           elsif options[:ssl_ca_file]
@@ -66,7 +67,17 @@ module Katello
             options[:ssl_ca_file] = self.ca_file
             self.new(cdn_configuration.url, options)
           elsif cdn_configuration.custom_cdn?
-            options[:ssl_ca_cert] = cdn_configuration.ssl_ca
+            if cdn_configuration.ssl_ca.present? || cdn_configuration.cdn_auth_enabled?
+              cert_store = OpenSSL::X509::Store.new
+              Foreman::Util.add_ca_bundle_to_store(cdn_configuration.ssl_ca,
+                                                   cert_store) if cdn_configuration.ssl_ca.present?
+              if cdn_configuration.cdn_auth_enabled?
+                cert_store.add_file(self.ca_file)
+                options[:ssl_client_cert] = OpenSSL::X509::Certificate.new(product.certificate)
+                options[:ssl_client_key] = OpenSSL::PKey::RSA.new(product.key)
+              end
+              options[:ssl_cert_store] = cert_store
+            end
             self.new(cdn_configuration.url, options)
           else
             options[:username] = cdn_configuration.username
