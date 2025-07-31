@@ -65,6 +65,8 @@ Foreman::Plugin.register :katello do
          :sync_status,
          :caption => N_('Sync Status'),
          :url => '/sync_management',
+         :url_hash => {:controller => 'katello/sync_management',
+                       :action => 'sync_status'},
          :engine => Katello::Engine,
          :turbolinks => false
 
