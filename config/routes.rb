@@ -7,6 +7,7 @@ Katello::Engine.routes.draw do
         get :index
         get :sync_status
         post :sync
+        get :auto_complete_search
       end
     end
 
@@ -18,6 +19,8 @@ Katello::Engine.routes.draw do
 
   match '/subscriptions' => 'react#index', :via => [:get]
   match '/subscriptions/*page' => 'react#index', :via => [:get]
+
+  match '/sync_management' => 'react#index', :via => [:get]
 
   match '/module_streams' => 'react#index', :via => [:get]
   match '/module_streams/*page' => 'react#index', :via => [:get]

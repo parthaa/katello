@@ -1,0 +1,127 @@
+.sync-management-page {
+  .sync-management-toolbar {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #ededed;
+    padding-bottom: 1rem;
+  }
+
+  .products-table {
+    .product-row {
+      &.redhat-product {
+        background-color: #fafafa;
+        
+        .pf-c-table__expandable-row-content {
+          background-color: #f5f5f5;
+        }
+      }
+
+      &.custom-product {
+        .pf-c-table__expandable-row-content {
+          background-color: #fafafa;
+        }
+      }
+    }
+
+    .repository-row {
+      background-color: transparent;
+      
+      td {
+        padding-left: 2rem;
+        border-top: none;
+      }
+    }
+
+    .pf-c-progress {
+      min-width: 150px;
+    }
+
+    .text-muted {
+      color: #6a6e73;
+    }
+
+    .ml-2 {
+      margin-left: 0.5rem;
+    }
+  }
+
+  // Status indicators
+  .sync-status {
+    &.running {
+      .pf-c-progress__bar {
+        background-color: #06c;
+      }
+    }
+
+    &.error {
+      color: #c9190b;
+    }
+
+    &.complete {
+      color: #3e8635;
+    }
+
+    &.never-synced {
+      color: #6a6e73;
+    }
+  }
+
+  // Content type indicators
+  .content-type-icon {
+    margin-right: 0.25rem;
+    
+    &.yum {
+      color: #06c;
+    }
+
+    &.docker {
+      color: #0066cc;
+    }
+
+    &.ansible {
+      color: #ee0000;
+    }
+
+    &.file {
+      color: #6a6e73;
+    }
+
+    &.deb {
+      color: #a30000;
+    }
+
+    &.python {
+      color: #3776ab;
+    }
+  }
+
+  // Loading states
+  .loading-overlay {
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 10;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .sync-management-page {
+    .products-table {
+      .pf-c-table {
+        font-size: 14px;
+      }
+
+      .repository-row td {
+        padding-left: 1rem;
+      }
+    }
+  }
+}

@@ -18,6 +18,7 @@ import AlternateContentSource from '../../scenes/AlternateContentSources';
 import BootedContainerImages from '../../scenes/BootedContainerImages';
 import FlatpakRemotes from '../../scenes/FlatpakRemotes';
 import FlatpakRemoteDetails from '../../scenes/FlatpakRemotes/Details';
+import SyncManagement from '../../scenes/SyncManagement';
 
 // eslint-disable-next-line import/prefer-default-export
 export const links = [
@@ -32,6 +33,10 @@ export const links = [
   {
     path: 'subscriptions/add',
     component: WithOrganization(withHeader(UpstreamSubscriptions, { title: __('Add Subscriptions') })),
+  },
+  {
+    path: 'sync_management',
+    component: WithOrganization(withHeader(SyncManagement, { title: __('Sync Status') })),
   },
   {
     path: 'labs/activation_keys/:id',
