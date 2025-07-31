@@ -10,6 +10,8 @@ Katello::Engine.routes.draw do
       end
     end
 
+    match '/sync_management' => 'react#index', :via => [:get]
+
     match '/remote_execution' => 'remote_execution#create', :via => [:post]
   end
 
@@ -18,8 +20,6 @@ Katello::Engine.routes.draw do
 
   match '/subscriptions' => 'react#index', :via => [:get]
   match '/subscriptions/*page' => 'react#index', :via => [:get]
-
-  match '/sync_management' => 'react#index', :via => [:get]
 
   match '/module_streams' => 'react#index', :via => [:get]
   match '/module_streams/*page' => 'react#index', :via => [:get]
