@@ -4,7 +4,6 @@ Katello::Engine.routes.draw do
 
     resources :sync_management, :only => [:destroy] do
       collection do
-        get :index
         get :sync_status
         post :sync
         get :auto_complete_search

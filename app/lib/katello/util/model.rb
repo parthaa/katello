@@ -30,6 +30,7 @@ module Katello
       def self.controller_path_to_model_hash
         {
           "katello/environments" => "Katello::KTEnvironment",
+          "katello/sync_management" => "Katello::Repository",
         }
       end
 

@@ -58,7 +58,7 @@ module Katello
     end
 
     def sync_status
-      repos = Repository.where(:id => params[:repoids]).readable.includes(:product, :latest_dynflow_sync)
+      repos = Repository.where(:id => params[:repoids]).readable.includes(:product)
       
       # Format repositories with sync progress for RABL
       @repositories = repos.map do |repo|
@@ -100,6 +100,10 @@ module Katello
 
     private
 
+    def resource_class
+      Repository
+    end
+
     def format_sync_progress(repo)
       ::Katello::SyncStatusPresenter.new(repo, latest_task(repo)).sync_progress
     end
@@ -131,7 +135,7 @@ module Katello
       # Get all repositories instead of grouping by products for TableIndexPage
       repositories = Repository.readable.joins(:product)
                               .where(products: { organization_id: org.id })
-                              .includes(:product, :latest_dynflow_sync)
+                              .includes(:product)
                               .order('products.name, katello_repositories.name')
       
       # Apply search if provided
