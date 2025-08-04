@@ -7,6 +7,7 @@ import componentRegistry from 'foremanReact/components/componentRegistry';
 import Application from './containers/Application/index';
 import Content from './scenes/SmartProxy/Content';
 import ChangeContentSource from './scenes/Hosts/ChangeContentSource';
+import HardwareModelsPage from './scenes/HardwareModels';
 
 import './redux';
 // Not currently mocking anything
@@ -25,4 +26,9 @@ componentRegistry.register({
 componentRegistry.register({
   name: 'ChangeContentSource',
   type: ChangeContentSource,
+});
+
+componentRegistry.register({
+  name: 'HardwareModelsPage',
+  type: HardwareModelsPage,
 });

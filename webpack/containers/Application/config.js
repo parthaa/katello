@@ -19,6 +19,7 @@ import BootedContainerImages from '../../scenes/BootedContainerImages';
 import FlatpakRemotes from '../../scenes/FlatpakRemotes';
 import FlatpakRemoteDetails from '../../scenes/FlatpakRemotes/Details';
 import SyncManagement from '../../scenes/SyncManagement';
+import HardwareModels from '../../scenes/HardwareModels';
 
 // eslint-disable-next-line import/prefer-default-export
 export const links = [
@@ -105,5 +106,9 @@ export const links = [
     path: 'flatpak_remotes/:id([0-9]+)',
     component: WithOrganization(withHeader(FlatpakRemoteDetails, { title: __('Flatpak Remote Details') })),
     exact: false,
+  },
+  {
+    path: 'hardware_models',
+    component: WithOrganization(withHeader(HardwareModels, { title: __('Hardware Models') })),
   },
 ];
