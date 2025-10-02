@@ -356,6 +356,15 @@ Katello::Engine.routes.draw do
           end
         end
 
+        api_resources :sync_management, :only => [] do
+          collection do
+            get :repositories
+            get :sync_status
+            post :sync
+            delete :cancel_sync
+          end
+        end
+
         api_resources :repository_sets, :only => [:index, :show] do
           get :auto_complete_search, :on => :collection
           member do
