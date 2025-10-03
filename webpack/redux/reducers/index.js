@@ -12,7 +12,6 @@ import { moduleStreamDetails } from '../../scenes/ModuleStreams/Details';
 import { contentViewDetails } from '../../scenes/ContentViews/Details';
 import hostDetails from '../../components/extensions/HostDetails/HostDetailsReducer';
 import searchBar from '../../components/extensions/SearchBar/SearchBarReducer';
-import { syncManagement } from '../../scenes/SyncManagement';
 
 export default combineReducers({
   organization,
@@ -27,6 +26,5 @@ export default combineReducers({
   contentViewDetails,
   hostDetails,
   searchBar,
-  syncManagement,
   ...organizationProductsReducers,
 });

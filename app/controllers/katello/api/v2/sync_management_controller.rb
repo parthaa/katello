@@ -2,7 +2,7 @@ module Katello
   class Api::V2::SyncManagementController < Api::V2::ApiController
     include SyncManagementHelper::RepoMethods
 
-    before_action :find_optional_organization, only: [:repositories, :sync_status, :sync, :cancel_sync]
+    before_action :find_organization, only: [:repositories, :sync_status, :sync, :cancel_sync]
 
     api :GET, "/sync_management/repositories", N_("List repositories with sync status for sync management")
     param :organization_id, :number, :desc => N_("Organization ID")
@@ -10,7 +10,7 @@ module Katello
     param :content_type, String, :desc => N_("Filter by content type")
     param_group :search, Api::V2::ApiController
     def repositories
-      org = current_organization_object
+      org = @organization
       fail HttpErrors::BadRequest, _("Organization is required") unless org
 
       products = org.library.products.readable
@@ -23,7 +23,7 @@ module Katello
 
       repositories = repositories.with_type(params[:content_type]) if params[:content_type]
 
-      collection = scoped_search(repositories.includes(:product, :root), :name, :asc)
+      collection = scoped_search(repositories.includes(:product, :root), :name, :asc, resource_class: Repository)
 
       # Add sync status to each repository
       collection[:results] = collection[:results].map do |repo|

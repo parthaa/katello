@@ -8,6 +8,7 @@ import TableIndexPage from 'foremanReact/components/PF4/TableIndexPage/TableInde
 import { getControllerSearchProps } from 'foremanReact/constants';
 import SyncStatusCell from './components/SyncStatusCell';
 import { urlBuilder } from 'foremanReact/common/urlHelpers';
+import { orgId } from '../../services/api';
 
 const SyncManagementPage = () => {
   const [syncingRepositories, setSyncingRepositories] = useState(new Set());
@@ -18,7 +19,10 @@ const SyncManagementPage = () => {
     '/katello/api/v2/sync_management/sync_status',
     {
       key: 'SYNC_STATUS',
-      params: { repository_ids: Array.from(syncingRepositories) },
+      params: {
+        repository_ids: Array.from(syncingRepositories),
+        organization_id: orgId(),
+      },
     }
   );
 
@@ -28,7 +32,10 @@ const SyncManagementPage = () => {
     if (syncingRepositories.size > 0) {
       intervalId = setInterval(() => {
         syncStatusResponse.setAPIOptions({
-          params: { repository_ids: Array.from(syncingRepositories) },
+          params: {
+            repository_ids: Array.from(syncingRepositories),
+            organization_id: orgId(),
+          },
         });
       }, 3000); // Poll every 3 seconds
     }
@@ -61,14 +68,20 @@ const SyncManagementPage = () => {
       const { post } = await import('foremanReact/redux/API');
       await post({
         url: '/katello/api/v2/sync_management/sync',
-        params: { repository_ids: repositoryIds },
+        params: {
+          repository_ids: repositoryIds,
+          organization_id: orgId(),
+        },
         successToast: response => `Started sync for ${response.data?.repositories?.length || 0} repositories`,
       });
 
       setSyncingRepositories(new Set([...syncingRepositories, ...repositoryIds]));
       // Immediately fetch updated sync status
       syncStatusResponse.setAPIOptions({
-        params: { repository_ids: repositoryIds },
+        params: {
+          repository_ids: repositoryIds,
+          organization_id: orgId(),
+        },
       });
     } catch (err) {
       console.error('Sync failed:', err);
@@ -82,7 +95,10 @@ const SyncManagementPage = () => {
       const { delete: del } = await import('foremanReact/redux/API');
       await del({
         url: '/katello/api/v2/sync_management/cancel_sync',
-        params: { repository_id: repoId },
+        params: {
+          repository_id: repoId,
+          organization_id: orgId(),
+        },
         successToast: 'Sync canceled',
       });
 
@@ -91,7 +107,10 @@ const SyncManagementPage = () => {
       setSyncingRepositories(newSyncing);
       // Refresh sync status
       syncStatusResponse.setAPIOptions({
-        params: { repository_ids: [repoId] },
+        params: {
+          repository_ids: [repoId],
+          organization_id: orgId(),
+        },
       });
     } catch (err) {
       console.error('Cancel sync failed:', err);
@@ -189,7 +208,10 @@ const SyncManagementPage = () => {
   return (
     <TableIndexPage
       apiUrl="/katello/api/v2/sync_management/repositories"
-      apiOptions={{ key: 'SYNC_MANAGEMENT_REPOSITORIES' }}
+      apiOptions={{
+        key: 'SYNC_MANAGEMENT_REPOSITORIES',
+        params: { organization_id: orgId() },
+      }}
       header={__('Sync Status')}
       controller="sync_management"
       creatable={false}
