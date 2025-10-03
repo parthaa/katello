@@ -26,9 +26,9 @@ module Katello
       collection = scoped_search(repositories.includes(:product, :root), :name, :asc, resource_class: Repository)
 
       # Add sync status to each repository
-      collection[:results] = collection[:results].map do |repo|
+      collection[:results].each do |repo|
         sync_status = format_sync_progress(repo)
-        repo.as_json.merge(sync_status: sync_status)
+        repo.define_singleton_method(:sync_status) { sync_status }
       end
 
       respond_for_index(collection: collection)

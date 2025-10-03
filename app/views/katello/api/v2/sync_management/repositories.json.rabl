@@ -11,7 +11,7 @@ node :product do |repository|
 end
 
 node :sync_status do |repository|
-  repository[:sync_status] if repository.respond_to?(:[])
+  repository.sync_status if repository.respond_to?(:sync_status)
 end
 
 node :permissions do |repository|
