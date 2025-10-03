@@ -16,7 +16,7 @@ end
 
 node :permissions do |repository|
   {
-    :syncable => repository.syncable_by?(User.current),
+    :syncable => repository.syncable?,
     :deletable => repository.deletable?,
     :editable => repository.editable?
   }
