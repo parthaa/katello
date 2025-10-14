@@ -11,9 +11,11 @@ jest.mock('foremanReact/components/PermissionDenied', () => ({ missingPermission
 
 jest.mock('../components/SearchBar', () => () => <div data-testid="search-bar">SearchBar</div>);
 jest.mock('../components/RecommendedRepositorySetsToggler', () => () => <div>Toggler</div>);
-jest.mock('../../components/LoadingState', () => ({ children, loading }) => (
-  loading ? <div>Loading...</div> : <div>{children}</div>
-));
+jest.mock('../../components/LoadingState', () => ({
+  LoadingState: ({ children, loading }) => (
+    loading ? <div>Loading...</div> : <div>{children}</div>
+  ),
+}));
 
 describe('RedHatRepositories page', () => {
   const defaultProps = {
