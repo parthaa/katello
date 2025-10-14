@@ -11,8 +11,9 @@ jest.mock('foremanReact/components/PermissionDenied', () => ({ missingPermission
 
 jest.mock('../components/SearchBar', () => () => <div data-testid="search-bar">SearchBar</div>);
 jest.mock('../components/RecommendedRepositorySetsToggler', () => () => <div>Toggler</div>);
-jest.mock('../../components/LoadingState', () => ({
-  LoadingState: ({ children, loading }) => (
+jest.mock('../../components/LoadingState/LoadingState', () => ({
+  __esModule: true,
+  default: ({ children, loading }) => (
     loading ? <div>Loading...</div> : <div>{children}</div>
   ),
 }));
