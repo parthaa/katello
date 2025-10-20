@@ -39,16 +39,14 @@ jest.mock('../components/RecommendedRepositorySetsToggler', () => {
 });
 
 // Mock the LoadingState component
-jest.mock('../../components/LoadingState', () => {
-  return {
-    LoadingState: function LoadingState({ loading, loadingText, children }) {
-      if (loading) {
-        return <div data-testid="loading-state">{loadingText}</div>;
-      }
-      return children;
+jest.mock('../../components/LoadingState', () => ({
+  LoadingState: function LoadingState({ loading, loadingText, children }) {
+    if (loading) {
+      return <div data-testid="loading-state">{loadingText}</div>;
     }
-  };
-});
+    return children;
+  }
+}));
 
 // Mock the helpers that return components
 jest.mock('../helpers', () => ({
@@ -69,6 +67,16 @@ jest.mock('../helpers', () => ({
 // Mock the API service
 jest.mock('../../services/api', () => ({
   open: jest.fn()
+}));
+
+// Mock the CDN configuration constants
+jest.mock('../Subscriptions/Manifest/CdnConfigurationTab/CdnConfigurationConstants', () => ({
+  EXPORT_SYNC: 'export_sync'
+}));
+
+// Mock the Redux action creator
+jest.mock('../../redux/actions/RedHatRepositories/enabled', () => ({
+  createEnabledRepoParams: jest.fn(() => ({ repoParams: {} }))
 }));
 
 describe('RedHatRepositories page', () => {
