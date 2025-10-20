@@ -66,7 +66,10 @@ jest.mock('../helpers', () => ({
 
 // Mock the API service
 jest.mock('../../../services/api', () => ({
-  open: jest.fn()
+  open: jest.fn(),
+  default: {
+    open: jest.fn()
+  }
 }));
 
 // Mock the CDN configuration constants
@@ -77,6 +80,48 @@ jest.mock('../../Subscriptions/Manifest/CdnConfigurationTab/CdnConfigurationCons
 // Mock the Redux action creator
 jest.mock('../../../redux/actions/RedHatRepositories/enabled', () => ({
   createEnabledRepoParams: jest.fn(() => ({ repoParams: {} }))
+}));
+
+// Mock PatternFly components to avoid prop validation issues
+jest.mock('patternfly-react', () => ({
+  Button: function Button({ children, onClick, ...props }) {
+    return (
+      <button onClick={onClick} {...props}>
+        {children}
+      </button>
+    );
+  },
+  FieldLevelHelp: function FieldLevelHelp({ content }) {
+    return <span title={content}>?</span>;
+  }
+}));
+
+// Mock PatternFly React Core components
+jest.mock('@patternfly/react-core', () => ({
+  Skeleton: function Skeleton() {
+    return <div className="pf-c-skeleton">Loading skeleton...</div>;
+  },
+  Alert: function Alert({ title, children, variant, ...props }) {
+    return (
+      <div className={`alert alert-${variant}`} {...props}>
+        <strong>{title}</strong>
+        {children}
+      </div>
+    );
+  }
+}));
+
+// Mock React Bootstrap components
+jest.mock('react-bootstrap', () => ({
+  Grid: function Grid({ children, ...props }) {
+    return <div {...props}>{children}</div>;
+  },
+  Row: function Row({ children, ...props }) {
+    return <div {...props}>{children}</div>;
+  },
+  Col: function Col({ children, ...props }) {
+    return <div {...props}>{children}</div>;
+  }
 }));
 
 describe('RedHatRepositories page', () => {
