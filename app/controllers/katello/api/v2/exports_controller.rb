@@ -116,7 +116,13 @@ module Katello
     end
 
     def find_incremental_history
-      if params[:from_history_id].present?
+      if params[:since].present? && params[:from_history_id].present?
+        fail HttpErrors::BadRequest, _("Cannot specify both 'since' and 'from_history_id' parameters")
+      end
+
+      if params[:since].present?
+        find_incremental_history_from_since
+      elsif params[:from_history_id].present?
         find_incremental_history_from_id
       else
         # Use the latest export
@@ -134,6 +140,27 @@ module Katello
       if @history.blank?
         throw_resource_not_found(name: 'export history',
                                   id: params[:from_history_id])
+      end
+    end
+
+    def find_incremental_history_from_since
+      unless params[:since].to_time.is_a?(Time)
+        fail HttpErrors::BadRequest, _("Date format is incorrect.")
+      end
+
+      since_time = params[:since].to_time
+      @history = ::Katello::ContentViewVersionExportHistory.
+                      where(content_view_version: @view.content_view.versions).
+                      where(destination_server: params[:destination_server]).
+                      where("created_at < ?", since_time).
+                      order(created_at: :desc).
+                      first
+
+      if @history.blank?
+        dest_server_msg = params[:destination_server].present? ? " for destination server '#{params[:destination_server]}'" : ""
+        msg = _("No existing export history was found before %{date}%{server} to perform an incremental export. A full export must be performed") %
+              { date: params[:since], server: dest_server_msg }
+        fail HttpErrors::NotFound, msg
       end
     end
   end

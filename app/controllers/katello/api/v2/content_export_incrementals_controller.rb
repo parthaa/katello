@@ -11,6 +11,10 @@ module Katello
     def_param_group :incremental do
       param :from_history_id, :number, :desc => N_("Export history identifier used for incremental export. "\
                                          "If not provided the most recent export history will be used."), :required => false
+      param :since, String, :desc => N_("Export changes since this date. "\
+        "Finds the most recent export before this date and uses it as base for incremental export. "\
+        "Date format: ISO 8601 (e.g., '2024-01-15T10:30:00Z' or '2024-01-15'). "\
+        "Cannot be used with from_history_id."), :required => false
     end
 
     api :POST, "/content_export_incrementals/version", N_("Performs an incremental-export of a content view version.")

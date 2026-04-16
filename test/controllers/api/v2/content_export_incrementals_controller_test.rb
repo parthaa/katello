@@ -16,323 +16,215 @@ module Katello
       setup_controller_defaults_api
       @library_dev_staging_view = ContentView.find(katello_content_views(:library_dev_staging_view).id)
       @library_view_version = katello_content_view_versions(:library_dev_staging_view_version)
+      @organization = @library_dev_staging_view.organization
       permissions
     end
 
-    # --- test permissions ---
-    def test_version_protected
-      @controller.stubs(:find_library_export_view)
-      @controller.stubs(:find_incremental_history)
-      @controller.stubs(:determine_export_format_from_history)
+    def create_export_history(version, destination_server, created_at, metadata = {})
+      metadata_with_defaults = { format: "syncable", incremental: false }.merge(metadata)
+      ::Katello::ContentViewVersionExportHistory.create!(
+        content_view_version: version,
+        destination_server: destination_server,
+        path: "/export/path/#{rand(10000)}",
+        created_at: created_at,
+        metadata: metadata_with_defaults
+      )
+    end
 
+    def setup_library_since_test_data
+      # Create library export view
+      @library_view = ::Katello::ContentView.create!(
+        organization: @organization,
+        name: ::Katello::ContentView::EXPORT_LIBRARY,
+        generated_for: :library_export
+      )
+      @library_version = @library_view.create_new_version
+
+      @library_old_export = create_export_history(@library_version, "test-server", 2.weeks.ago, { format: "importable", incremental: false })
+      @library_recent_export = create_export_history(@library_version, "test-server", 3.days.ago, { format: "importable", incremental: false })
+    end
+
+    def setup_repository_since_test_data
+      @repository = katello_repositories(:fedora_17_x86_64)
+
+      # Create repository export view
+      @repo_view = ::Katello::ContentView.create!(
+        organization: @repository.organization,
+        name: "Export-#{@repository.label}-#{@repository.library_instance_or_self.id}",
+        generated_for: :repository_export
+      )
+      @repo_version = @repo_view.create_new_version
+
+      @repo_old_export = create_export_history(@repo_version, nil, 2.weeks.ago, { format: "syncable", incremental: false })
+      @repo_recent_export = create_export_history(@repo_version, nil, 3.days.ago, { format: "syncable", incremental: false })
+    end
+
+    def test_version_protected
       allowed_perms = [@export_permission]
       denied_perms = [@create_permission, @update_permission,
                       @destroy_permission, @view_permission]
       version = @library_dev_staging_view.versions.first
 
       assert_protected_action(:version, allowed_perms, denied_perms, [@library_dev_staging_view.organization]) do
-        post :version, params: { :id => version.id }
+        post :version, params: { id: version.id }
       end
     end
 
     def test_library_protected
-      @controller.stubs(:find_library_export_view)
-      @controller.stubs(:find_incremental_history)
-      @controller.stubs(:determine_export_format_from_history)
-
-      allowed_perms = [{name: @export_permission, :resource_type => "Organization"}]
+      allowed_perms = [{name: @export_permission, resource_type: "Organization"}]
       denied_perms = [@create_permission, @update_permission,
                       @destroy_permission, @view_permission]
 
       org = get_organization
       assert_protected_action(:library, allowed_perms, denied_perms, [org]) do
-        post :library, params: { organization_id: org.id}
+        post :library, params: { organization_id: org.id }
       end
     end
 
-    # --- find_library_export_view tests ----
-    def test_find_library_export_view_with_history_id
-      @controller.params = { from_history_id: 1 }
-      content_view = mock("content_view")
-      content_view_version = mock("content_view_version")
-      content_view_version.stubs(:content_view).returns(content_view)
-      history = mock("history")
-      history.stubs(:content_view_version).returns(content_view_version)
-      @controller.stubs(:find_incremental_history_from_id).once
-      @controller.instance_variable_set(:@history, history)
-
-      @controller.stubs(:determine_view_from_name).never
-      @controller.send(:find_library_export_view)
-      assert_equal @controller.instance_variable_get(:@view), content_view
-    end
-
-    def test_find_library_export_view_without_params
-      @controller.params = {}
-      organization = get_organization
-      @controller.instance_variable_set(:@organization, organization)
-      importable_result = mock("importable_result")
-      importable_result.stubs(:updated_at).returns(2.days.ago)
-      syncable_result = mock("syncable_result")
-      syncable_result.stubs(:updated_at).returns(1.day.ago)
-
-      # When format is UNDEFINED (default), both conditions are checked
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: organization,
-        name: ::Katello::ContentView::EXPORT_LIBRARY,
-        generated_for: :library_export
-      ).returns(importable_result).once
-
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: organization,
-        name: "#{::Katello::ContentView::EXPORT_LIBRARY}-SYNCABLE",
-        generated_for: :library_export_syncable
-      ).returns(syncable_result).once
-
-      @controller.send(:find_library_export_view)
-
-      # Ensure the newer of the two is chosen
-      assert_equal @controller.instance_variable_get(:@view), syncable_result
-    end
-
-    def test_find_library_export_view_param_format_importable
-      @controller.params = {format: 'importable'}
-      organization = get_organization
-      @controller.instance_variable_set(:@organization, organization)
-      importable_result = mock("importable_result")
-      importable_result.stubs(:updated_at).returns(1.day.ago)
-
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: organization,
-        name: ::Katello::ContentView::EXPORT_LIBRARY,
-        generated_for: :library_export
-      ).returns(importable_result).once
-
-      @controller.send(:find_library_export_view)
-      assert_equal @controller.instance_variable_get(:@view), importable_result
-    end
-
-    def test_find_library_export_view_param_format_syncable
-      @controller.params = {format: 'syncable'}
-      organization = get_organization
-      @controller.instance_variable_set(:@organization, organization)
-      syncable_result = mock("syncable_result")
-      syncable_result.stubs(:updated_at).returns(1.day.ago)
-
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: organization,
-        name: "#{::Katello::ContentView::EXPORT_LIBRARY}-SYNCABLE",
-        generated_for: :library_export_syncable
-      ).returns(syncable_result).once
-
-      @controller.send(:find_library_export_view)
-      assert_equal @controller.instance_variable_get(:@view), syncable_result
-    end
-
-    def test_find_library_export_view_with_destination_server
-      @controller.params = {destination_server: 'satellite.example.com'}
-      organization = get_organization
-      @controller.instance_variable_set(:@organization, organization)
-      importable_result = mock("importable_result")
-      importable_result.stubs(:updated_at).returns(2.days.ago)
-      syncable_result = mock("syncable_result")
-      syncable_result.stubs(:updated_at).returns(1.day.ago)
-
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: 'satellite.example.com',
-        organization: organization,
-        name: ::Katello::ContentView::EXPORT_LIBRARY,
-        generated_for: :library_export
-      ).returns(importable_result).once
-
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: 'satellite.example.com',
-        organization: organization,
-        name: "#{::Katello::ContentView::EXPORT_LIBRARY}-SYNCABLE",
-        generated_for: :library_export_syncable
-      ).returns(syncable_result).once
-
-      @controller.send(:find_library_export_view)
-
-      # Ensure the newer of the two is chosen
-      assert_equal @controller.instance_variable_get(:@view), syncable_result
-    end
-
-    def test_find_library_not_found
-      org = get_organization
-
-      # Stub the service method calls to return nil
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).returns(nil)
-
-      post :library, params: { organization_id: org.id,
-                               from_latest_increment: true }
-      response = JSON.parse(@response.body)['displayMessage']
-      assert_match(/Unable to find a base content view to use for incremental export. Please run a complete export instead./, response)
+    def test_version_since_and_from_history_id_conflict
+      post :version, params: { id: @library_view_version.id, since: '2024-01-15', from_history_id: 123 }
       assert_response :bad_request
+      assert_match(/cannot.*both.*since.*from_history_id/i, JSON.parse(response.body)['displayMessage'])
     end
 
-    # --- find_repository_export_view tests ----
-    def test_find_repository_export_view_with_history_id
-      @controller.params = { from_history_id: 1 }
-      mock_org = mock("organization")
-      library_instance = mock("library_instance")
-      library_instance.stubs(:id).returns(42)
-      repository = mock("repository")
-      repository.stubs(:label).returns("repo_label")
-      repository.stubs(:library_instance_or_self).returns(library_instance)
-      repository.stubs(:organization).returns(mock_org)
-      @controller.instance_variable_set(:@repository, repository)
-      content_view = mock("content_view")
-      content_view_version = mock("content_view_version")
-      content_view_version.stubs(:content_view).returns(content_view)
-      history = mock("history")
-      history.stubs(:content_view_version).returns(content_view_version)
-      @controller.stubs(:find_incremental_history_from_id).once
-      @controller.instance_variable_set(:@history, history)
-
-      @controller.stubs(:determine_view_from_name).never
-      @controller.send(:find_repository_export_view)
-      assert_equal @controller.instance_variable_get(:@view), content_view
+    def test_version_since_invalid_date_format
+      post :version, params: { id: @library_view_version.id, since: 'invalid-date' }
+      assert_response :bad_request
+      assert_match(/date format is incorrect/i, JSON.parse(response.body)['displayMessage'])
     end
 
-    def test_find_repository_export_view_without_params
-      @controller.params = {}
-      mock_org = mock("organization")
-      library_instance = mock("library_instance")
-      library_instance.stubs(:id).returns(42)
-      repository = mock("repository")
-      repository.stubs(:label).returns("repo_label")
-      repository.stubs(:library_instance_or_self).returns(library_instance)
-      repository.stubs(:organization).returns(mock_org)
-      @controller.instance_variable_set(:@repository, repository)
-      importable_result = mock("importable_result")
-      importable_result.stubs(:updated_at).returns(2.days.ago)
-      syncable_result = mock("syncable_result")
-      syncable_result.stubs(:updated_at).returns(1.day.ago)
+    def test_version_since_finds_correct_history
+      old_export = create_export_history(@library_view_version, "test-server", 2.weeks.ago)
+      recent_export = create_export_history(@library_view_version, "test-server", 3.days.ago)
 
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: mock_org,
-        name: "Export-repo_label-42",
-        generated_for: :repository_export
-      ).returns(importable_result).once
+      since_date = 1.week.ago.iso8601
 
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: mock_org,
-        name: "Export-SYNCABLE-repo_label-42",
-        generated_for: :repository_export_syncable
-      ).returns(syncable_result).once
+      @controller.expects(:async_task).with do |action_class, options|
+        assert_equal Actions::Katello::ContentViewVersion::Export, action_class
+        assert_equal old_export.id, options[:from_history].id
+        assert_equal @library_view_version, options[:content_view_version]
+        true
+      end.returns(build_task_stub)
 
-      @controller.send(:find_repository_export_view)
-
-      # Ensure the newer of the two is chosen
-      assert_equal @controller.instance_variable_get(:@view), syncable_result
+      post :version, params: { id: @library_view_version.id, since: since_date }
+      assert_response :accepted
     end
 
-    def test_find_respository_export_view_param_format_importable
-      @controller.params = {format: 'importable'}
-      mock_org = mock("organization")
-      library_instance = mock("library_instance")
-      library_instance.stubs(:id).returns(42)
-      repository = mock("repository")
-      repository.stubs(:label).returns("repo_label")
-      repository.stubs(:library_instance_or_self).returns(library_instance)
-      repository.stubs(:organization).returns(mock_org)
-      @controller.instance_variable_set(:@repository, repository)
-      importable_result = mock("importable_result")
-      importable_result.stubs(:updated_at).returns(1.day.ago)
+    def test_version_since_no_history_before_date
+      create_export_history(@library_view_version, "test-server", 1.week.ago)
 
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: mock_org,
-        name: "Export-repo_label-42",
-        generated_for: :repository_export
-      ).returns(importable_result).once
+      since_date = 1.month.ago.iso8601
 
-      @controller.send(:find_repository_export_view)
-      assert_equal @controller.instance_variable_get(:@view), importable_result
+      post :version, params: { id: @library_view_version.id, since: since_date }
+      assert_response :not_found
+      assert_match(/no existing export history.*before.*full export/i, JSON.parse(response.body)['displayMessage'])
     end
 
-    def test_find_respository_export_view_param_format_syncable
-      @controller.params = {format: 'syncable'}
-      mock_org = mock("organization")
-      library_instance = mock("library_instance")
-      library_instance.stubs(:id).returns(42)
-      repository = mock("repository")
-      repository.stubs(:label).returns("repo_label")
-      repository.stubs(:library_instance_or_self).returns(library_instance)
-      repository.stubs(:organization).returns(mock_org)
-      @controller.instance_variable_set(:@repository, repository)
-      syncable_result = mock("syncable_result")
-      syncable_result.stubs(:updated_at).returns(1.day.ago)
+    def test_version_since_respects_destination_server
+      create_export_history(@library_view_version, "test-server", 1.week.ago)
+      other_server_export = create_export_history(@library_view_version, "other-server", 1.week.ago)
 
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).with(
-        destination_server: nil,
-        organization: mock_org,
-        name: "Export-SYNCABLE-repo_label-42",
-        generated_for: :repository_export_syncable
-      ).returns(syncable_result).once
+      since_date = 3.days.ago.iso8601
 
-      @controller.send(:find_repository_export_view)
-      assert_equal @controller.instance_variable_get(:@view), syncable_result
+      post :version, params: { id: @library_view_version.id, since: since_date, destination_server: "other-server" }
+      assert_response :not_found
     end
 
-    def test_find_repository_not_found
-      @controller.params = {}
-      mock_org = mock("organization")
-      library_instance = mock("library_instance")
-      library_instance.stubs(:id).returns(42)
-      repository = mock("repository")
-      repository.stubs(:label).returns("repo_label")
-      repository.stubs(:library_instance_or_self).returns(library_instance)
-      repository.stubs(:organization).returns(mock_org)
-      @controller.instance_variable_set(:@repository, repository)
+    def test_version_since_with_destination_server_and_async_task
+      test_server_export = create_export_history(@library_view_version, "test-server", 1.week.ago)
 
-      ::Katello::Pulp3::ContentViewVersion::Export.stubs(:find_export_view).returns(nil)
+      since_date = 1.week.ago.iso8601
+      dest_server = "test-server"
 
-      assert_raises(HttpErrors::BadRequest) do
-        @controller.send(:find_repository_export_view)
-      end
+      @controller.expects(:async_task).with do |action_class, options|
+        assert_equal Actions::Katello::ContentViewVersion::Export, action_class
+        assert_equal test_server_export.id, options[:from_history].id
+        assert_equal dest_server, options[:destination_server]
+        true
+      end.returns(build_task_stub)
+
+      post :version, params: { id: @library_view_version.id, since: since_date, destination_server: dest_server }
+      assert_response :accepted
     end
 
-    # --- determine_export_format_from_history tests ----
-    def test_throws_error_on_history_and_param_format_mismatch
-      @controller.params = { from_history_id: 1, format: 'importable' }
-      history = mock("history")
-      history.stubs(:metadata).returns({ format: 'syncable' })
-      @controller.instance_variable_set(:@history, history)
+    def test_library_since_finds_correct_history
+      setup_library_since_test_data
 
-      response = assert_raises(HttpErrors::BadRequest) { @controller.send(:determine_export_format_from_history) }
-      assert_match(/The provided incremental export format 'importable' must match the previous export's format 'syncable'. Consider using 'from_history_id' to point to a matching export./, response.message)
+      since_date = 1.week.ago.iso8601
+
+      @controller.expects(:async_task).with do |action_class, options|
+        assert_equal ::Actions::Pulp3::Orchestration::ContentViewVersion::ExportLibrary, action_class
+        assert_equal @library_old_export.id, options[:from_history].id
+        assert_equal @organization, options[0]
+        true
+      end.returns(build_task_stub)
+
+      post :library, params: { organization_id: @organization.id, since: since_date }
+      assert_response :accepted
     end
 
-    def test_sets_export_format_from_history
-      @controller.params = { from_history_id: 1 }
-      history = mock("history")
-      history.stubs(:metadata).returns({ format: 'importable' })
-      @controller.instance_variable_set(:@history, history)
+    def test_library_since_no_history_before_date
+      setup_library_since_test_data
 
-      @controller.send(:determine_export_format_from_history)
-      assert_equal 'importable', @controller.instance_variable_get(:@export_format)
+      since_date = 1.month.ago.iso8601
+
+      post :library, params: { organization_id: @organization.id, since: since_date }
+      assert_response :not_found
+      assert_match(/no existing export history.*before.*full export/i, JSON.parse(response.body)['displayMessage'])
     end
 
-    # --- check for blank view tests ----
-    def test_check_for_blank_view_without_params
-      @controller.params = {}
-      @controller.instance_variable_set(:@view, nil)
-      response = assert_raises(HttpErrors::BadRequest) { @controller.send(:check_for_blank_view) }
-      assert_match(/Unable to find a base content view to use for incremental export. Please run a complete export instead./, response.message)
+    def test_library_since_respects_destination_server
+      setup_library_since_test_data
+      other_server_export = create_export_history(@library_version, "other-server", 1.week.ago, { format: "importable", incremental: false })
+
+      since_date = 3.days.ago.iso8601
+
+      post :library, params: { organization_id: @organization.id, since: since_date, destination_server: "other-server" }
+      assert_response :not_found
     end
 
-    def test_check_for_blank_view_with_params
-      @controller.params = { from_history_id: 1, format: 'importable' }
-      @controller.instance_variable_set(:@view, nil)
-      response = assert_raises(HttpErrors::BadRequest) { @controller.send(:check_for_blank_view) }
-      assert_match(/Unable to find a base content view to use for incremental export using the provided parameters: 'from_history_id':1 'format':importable/, response.message)
+    def test_library_since_with_destination_server_and_async_task
+      setup_library_since_test_data
+      test_server_export = create_export_history(@library_version, "test-server", 1.week.ago, { format: "importable", incremental: false })
+
+      since_date = 1.week.ago.iso8601
+      dest_server = "test-server"
+
+      @controller.expects(:async_task).with do |action_class, options|
+        assert_equal ::Actions::Pulp3::Orchestration::ContentViewVersion::ExportLibrary, action_class
+        assert_equal test_server_export.id, options[:from_history].id
+        assert_equal dest_server, options[:destination_server]
+        true
+      end.returns(build_task_stub)
+
+      post :library, params: { organization_id: @organization.id, since: since_date, destination_server: dest_server }
+      assert_response :accepted
+    end
+
+    def test_repository_since_finds_correct_history
+      setup_repository_since_test_data
+
+      since_date = 1.week.ago.iso8601
+
+      @controller.expects(:async_task).with do |action_class, options|
+        assert_equal ::Actions::Pulp3::Orchestration::ContentViewVersion::ExportRepository, action_class
+        assert_equal @repo_old_export.id, options[:from_history].id
+        assert_equal @repository, options[0]
+        true
+      end.returns(build_task_stub)
+
+      post :repository, params: { id: @repository.id, since: since_date }
+      assert_response :accepted
+    end
+
+    def test_repository_since_no_history_before_date
+      setup_repository_since_test_data
+
+      since_date = 1.month.ago.iso8601
+
+      post :repository, params: { id: @repository.id, since: since_date }
+      assert_response :not_found
+      assert_match(/no existing export history.*before.*full export/i, JSON.parse(response.body)['displayMessage'])
     end
   end
 end
