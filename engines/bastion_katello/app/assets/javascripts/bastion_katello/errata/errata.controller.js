@@ -35,6 +35,7 @@ angular.module('Bastion.errata').controller('ErrataController',
         }
 
         nutupane = $scope.nutupane = new Nutupane(Erratum, params);
+        nutupane.enableSelectAllResults();
         $scope.controllerName = 'katello_errata';
 
         // Labels so breadcrumb strings can be translated
@@ -97,6 +98,7 @@ angular.module('Bastion.errata').controller('ErrataController',
 
         $scope.goToNextStep = function () {
             IncrementalUpdate.setBulkErrata(nutupane.getAllSelectedResults('errata_id'));
+            IncrementalUpdate.setErrataCount(nutupane.table.numSelected);
             $state.transitionTo('apply-errata.select-content-hosts');
         };
 

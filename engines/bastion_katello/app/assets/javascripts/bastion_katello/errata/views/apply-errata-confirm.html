@@ -6,22 +6,22 @@
   </p>
 </section>
 
-<section class="col-md-4" ng-hide="errataIds">
+<section class="col-md-4" ng-hide="errataCount">
   <p bst-alert="warning">
     <span translate>You must select at least one Errata to apply.</span>
   </p>
 </section>
 
-<section class="details details-full" ng-show="selectedContentHosts && errataIds">
+<section class="details details-full" ng-show="selectedContentHosts && errataCount">
   <h3 ng-show="errata" translate>Apply {{ errata.errata_id }}</h3>
 
   <form id="errataActionForm" method="post" action="/katello/remote_execution">
     <input type="hidden" name="remote_action" value="errata_install"/>
     <input type="hidden" name="name" ng-value="errataActionFormValues.errata"/>
+    <input type="hidden" name="bulk_errata_ids" ng-value="errataActionFormValues.bulkErrataIds"/>
     <input type="hidden" name="bulk_host_ids" ng-value="errataActionFormValues.bulkHostIds"/>
     <input type="hidden" name="customize" ng-value="errataActionFormValues.customize"/>
     <input type="hidden" name="authenticity_token" ng-value="errataActionFormValues.authenticityToken"/>
-    <input type="hidden" name="install_all" ng-value="table.allResultsSelected" />
   </form>
 
   <section ng-hide="updates.length > 0">
@@ -36,10 +36,10 @@
 
     <div ng-hide="errata">
       <p translate ng-show="contentHostIds.length === 0">
-        Apply {{ errataIds.length }} Errata to all Content Host(s)?
+        Apply {{ errataCount }} Errata to all Content Host(s)?
       </p>
       <p translate ng-hide="contentHostIds.length === 0">
-        Apply {{ errataIds.length }} Errata to {{ contentHostIds.length }} Content Host(s)?
+        Apply {{ errataCount }} Errata to {{ contentHostIds.length }} Content Host(s)?
       </p>
     </div>
   </section>

@@ -21,29 +21,16 @@ import { foremanUrl } from 'foremanReact/common/helpers';
 import { STATUS } from 'foremanReact/constants';
 import { selectAPIStatus } from 'foremanReact/redux/API/APISelectors';
 
-const getSelectedEnvId = () => {
-  const selectElement = document.querySelector('#hostgroup_lifecycle_environment_id');
-  const selectedOption = selectElement.options[selectElement.selectedIndex];
-  let dataId = selectedOption?.getAttribute?.('data-id');
-  if (!dataId) {
-    dataId = selectElement.value;
-  }
-  return dataId;
+const getSelectedCveId = () => {
+  const selectElement = document.querySelector('#hostgroup_content_view_environment_id');
+  if (!selectElement) return null;
+  return selectElement.value || null;
 };
-const getSelectedContentViewId = () => {
-  const selectElement = document.querySelector('#hostgroup_content_view_id');
-  const selectedOption = selectElement.options[selectElement.selectedIndex];
-  let dataId = selectedOption?.getAttribute?.('data-id');
-  if (!dataId) {
-    dataId = selectElement.value;
-  }
-  return dataId;
-};
+
 const ActivationKeysSearch = () => {
   const ACTIVATION_KEYS = 'ACTIVATION_KEYS';
   const KT_AK_LABEL = 'kt_activation_keys';
-  const [selectedEnvId, setSelectedEnvId] = useState(getSelectedEnvId());
-  const [selectedContentViewId, setSelectedContentViewId] = useState(getSelectedContentViewId());
+  const [selectedCveId, setSelectedCveId] = useState(getSelectedCveId());
   const isLoading =
     useSelector(state => selectAPIStatus(state, ACTIVATION_KEYS)) === STATUS.PENDING;
   const [activationKeys, setActivationKeys] = useState([]);
@@ -51,20 +38,21 @@ const ActivationKeysSearch = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dispatch = useDispatch();
 
-  const ktLoadActivationKeys = useCallback(() => {
-    if (selectedEnvId && selectedContentViewId) {
-      dispatch(get({
-        key: ACTIVATION_KEYS,
-        url: foremanUrl(`/katello/api/v2/environments/${selectedEnvId}/activation_keys`),
-        params: { content_view_id: selectedContentViewId },
-        handleSuccess: ({ data }) => {
-          setActivationKeys(data.results);
-        },
-        errorToast: () =>
-          __('There was a problem retrieving Activation Key data from the server.'),
-      }));
+  const ktLoadActivationKeys = useCallback((cveId) => {
+    if (!cveId) {
+      setActivationKeys([]);
+      return;
     }
-  }, [dispatch, selectedEnvId, selectedContentViewId, setActivationKeys]);
+    dispatch(get({
+      key: ACTIVATION_KEYS,
+      url: foremanUrl(`/katello/api/v2/content_view_environments/${cveId}`),
+      handleSuccess: ({ data }) => {
+        setActivationKeys(data.activation_keys);
+      },
+      errorToast: () =>
+        __('There was a problem retrieving Activation Key data from the server.'),
+    }));
+  }, [dispatch]);
   const getParamContainer = useCallback(() => {
     let ret;
     const inputs = document.querySelectorAll("div#parameters .fields input[type='text']");
@@ -77,13 +65,18 @@ const ActivationKeysSearch = () => {
   }, [KT_AK_LABEL]);
 
   useEffect(() => {
-    $('#hostgroup_lifecycle_environment_id').on('change', () => setSelectedEnvId(getSelectedEnvId)); // cant use eventlistener on select2
-    $('#hostgroup_content_view_id').on('change', () =>
-      setSelectedContentViewId(getSelectedContentViewId())); // cant use eventlistener on select2
-    if (selectedEnvId && selectedContentViewId) {
-      ktLoadActivationKeys();
-    }
+    const cveSelect = $('#hostgroup_content_view_environment_id');
+    const handleCveChange = () => {
+      const cveId = getSelectedCveId();
+      setSelectedCveId(cveId);
+      ktLoadActivationKeys(cveId);
+    };
+    cveSelect.on('change', handleCveChange);
+    ktLoadActivationKeys(selectedCveId);
+    return () => cveSelect.off('change', handleCveChange);
+  }, [selectedCveId, ktLoadActivationKeys]);
 
+  useEffect(() => {
     const ktHideParams = () => {
       const container = getParamContainer();
       if (container) {
@@ -104,7 +97,7 @@ const ActivationKeysSearch = () => {
     };
     ktHideParams();
     setSelectedKeys(ktAkGetKeysFromParam());
-  }, [getParamContainer, ktLoadActivationKeys, selectedContentViewId, selectedEnvId]);
+  }, [getParamContainer]);
 
   useEffect(() => {
     function ktSetParam() {
@@ -136,7 +129,7 @@ const ActivationKeysSearch = () => {
     ktSetParam();
   }, [getParamContainer, selectedKeys]);
 
-  if (!(selectedEnvId && selectedContentViewId)) {
+  if (!selectedCveId) {
     return (
       <EmptyState>
         <EmptyStateHeader titleText={<>{__('Please select a lifecycle environment and content view to view activation keys.')}</>} headingLevel="h4" />
@@ -208,7 +201,7 @@ const ActivationKeysSearch = () => {
             <Button
               id="ak_refresh_subscriptions"
               variant="link"
-              onClick={ktLoadActivationKeys}
+              onClick={() => ktLoadActivationKeys(selectedCveId)}
               ouiaId="ak-refresh-button"
               isInline
             >

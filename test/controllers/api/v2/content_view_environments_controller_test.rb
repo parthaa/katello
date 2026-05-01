@@ -70,6 +70,17 @@ module Katello
       assert_template 'api/v2/content_view_environments/index'
     end
 
+    def test_show
+      cve = @library_dev_staging_view.content_view_environments.first
+      get :show, params: { :id => cve.id }
+
+      assert_response :success
+      assert_equal cve.id, resp.id
+      assert_equal cve.content_view_id, resp.content_view.id
+      assert_equal cve.environment_id, resp.lifecycle_environment.id
+      assert_template 'api/v2/content_view_environments/show'
+    end
+
     def test_index_protected
       allowed_perms = [@view_cv_permission, @view_lce_permission]
       assert_protected_action(:index, allowed_perms, @denied_perms, [@organization]) do

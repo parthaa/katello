@@ -50,6 +50,7 @@ angular.module('Bastion.errata').controller('ApplyErrataController',
             $scope.errataActionFormValues = {
                 authenticityToken: $window.AUTH_TOKEN.replace(/&quot;/g, ''),
                 errata: IncrementalUpdate.getErrataIds().join(','),
+                bulkErrataIds: angular.toJson(IncrementalUpdate.getBulkErrata()),
                 bulkHostIds: formatBulkHostIds(),
                 customize: false
             };
@@ -137,12 +138,18 @@ angular.module('Bastion.errata').controller('ApplyErrataController',
                 HostBulkAction.installContent(params, transitionToTask, error);
             };
 
+            $scope.allErrataSelected = IncrementalUpdate.getBulkErrata().all;
             $scope.selectedContentHosts = IncrementalUpdate.getBulkContentHosts();
             $scope.selectedContentHosts['errata_ids'] = IncrementalUpdate.getErrataIds();
             $scope.selectedContentHosts['organization_id'] = CurrentOrganization;
-            HostBulkAction.availableIncrementalUpdates($scope.selectedContentHosts, function (updates) {
-                $scope.updates = updates;
-            });
+
+            if ($scope.allErrataSelected) {
+                $scope.updates = [];
+            } else {
+                HostBulkAction.availableIncrementalUpdates($scope.selectedContentHosts, function (updates) {
+                    $scope.updates = updates;
+                });
+            }
 
             $scope.confirmApply = function() {
                 $scope.applyingErrata = true;
@@ -161,5 +168,6 @@ angular.module('Bastion.errata').controller('ApplyErrataController',
             $scope.selectedContentHosts = IncrementalUpdate.getBulkContentHosts();
             $scope.contentHostIds = IncrementalUpdate.getContentHostIds();
             $scope.errataIds = IncrementalUpdate.getErrataIds();
+            $scope.errataCount = IncrementalUpdate.getErrataCount();
         }
     ]);

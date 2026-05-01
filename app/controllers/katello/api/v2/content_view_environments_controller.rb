@@ -23,6 +23,12 @@ module Katello
       respond(:collection => scoped_search(index_relation.distinct, :id, :asc, resource_class: ContentViewEnvironment))
     end
 
+    api :GET, "/content_view_environments/:id", N_("Show a content view environment")
+    param :id, :number, :desc => N_("content view environment identifier"), :required => true
+    def show
+      @resource = ContentViewEnvironment.readable.non_generated.find(params[:id])
+    end
+
     def index_relation
       content_view_environments = ContentViewEnvironment.readable.non_generated
       content_view_environments = content_view_environments.in_organization(@organization) if @organization

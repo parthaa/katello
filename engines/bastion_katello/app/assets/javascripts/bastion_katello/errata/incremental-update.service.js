@@ -22,6 +22,7 @@
         };
 
         this.errataIds = [];
+        this.errataCount = 0;
         this.contentHostIds = [];
         this.bulkErrata = {};
         this.bulkContentHosts = {};
@@ -42,6 +43,14 @@
          */
         this.getErrataIds = function () {
             return this.errataIds;
+        };
+
+        this.setErrataCount = function (count) {
+            this.errataCount = count;
+        };
+
+        this.getErrataCount = function () {
+            return this.errataCount || this.errataIds.length;
         };
 
         /**
